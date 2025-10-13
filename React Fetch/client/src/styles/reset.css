@@ -1,0 +1,16 @@
+/* reset: quita gutters/offsets globales */
+*{box-sizing:border-box}
+html,body,#root{
+  margin:0 !important;
+  padding:0 !important;
+  width:100% !important;
+  max-width:100vw !important;
+}
+body,#root{overflow-x:hidden !important}
+
+/* por si quedó algún layout de ejemplo con sidebar */
+.App,.layout,main,.page{
+  margin-left:0 !important;
+  padding-left:0 !important;
+  transform:none !important;
+}
