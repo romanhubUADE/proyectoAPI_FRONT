@@ -7,11 +7,9 @@ import App from './App.jsx'
 import './styles/index.css'
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
     <BrowserRouter>
       <ShopProvider>
         <App />
       </ShopProvider>
     </BrowserRouter>
-  </StrictMode>
 )
