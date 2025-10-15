@@ -32,6 +32,9 @@ export default function NavBar() {
         </Link>
 {/* Menú principal (siempre visible) */}
 <nav className="flex gap-6">
+  <Link to="/catalog" className="text-sm font-medium text-white hover:text-primary">
+    Catálogo
+  </Link>
   <Link to="/catalog?cat=electric" className="text-sm font-medium text-white hover:text-primary">
     Electric
   </Link>
@@ -42,6 +45,7 @@ export default function NavBar() {
     Bass
   </Link>
 </nav>
+
 
         {/* Buscador + acciones */}
         <div className="flex items-center gap-3">
