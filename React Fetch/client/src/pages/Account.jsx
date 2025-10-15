@@ -52,8 +52,12 @@ export default function Account() {
               <div className="rounded-md border border-stone-100 p-4 dark:border-stone-700">
                 <p className="text-sm text-stone-600 dark:text-stone-300">Preferencias</p>
                 <div className="mt-3 flex gap-3">
-                  <button className="rounded-md border border-stone-200 px-3 py-1 text-sm dark:border-stone-700">Email</button>
-                  <button className="rounded-md border border-stone-200 px-3 py-1 text-sm dark:border-stone-700">SMS</button>
+                  <button className="rounded-md border border-stone-200 px-3 py-1 text-sm text-black dark:text-black dark:border-stone-700">
+                    Email
+                          </button>
+                  <button className="rounded-md border border-stone-200 px-3 py-1 text-sm text-black dark:text-black dark:border-stone-700">
+                    SMS
+                    </button>
                 </div>
               </div>
             </div>

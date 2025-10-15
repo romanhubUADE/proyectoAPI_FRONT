@@ -32,8 +32,7 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* FEATURED */}
+   {/* FEATURED */}
 <section className="py-12 md:py-16">
   <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
     <h2 className="text-2xl font-bold text-stone-900 dark:text-white">Featured Guitars</h2>
@@ -75,6 +74,7 @@ export default function Home() {
   </div>
 </section>
 
+
 {/* CATEGORIES */}
 <section className="py-12 md:py-16">
   <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -100,12 +100,7 @@ export default function Home() {
           img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDqnpHQE5yhMjM5ZOSN1dQUs-aGIgzx4iMtTyk3J1pcIYwH8by3PyAx02riMLYf7OIn-KuP43RtnL_qNkIRzQS2Sv852HnAAlNFnUmZhF39yzc30W80GKjBhK2hhJl_PLvX0nsOgiWgCJYFRyUYwSywt0LUEPsIi9VGG_cDCtmyYejC72HEqFOmYAym8Iyv4If-5LaVNsF0ZwaVZ_56qtqe1ZN3fnrtW38IJbWFRDQ9HlnM4AeoGFLYZA-_IWU9mhQoLoIBaBGMWvA",
           to: "/catalog?cat=bass",
         },
-        {
-          title: "Classical Guitars",
-          text: "Browse our collection of classical guitars.",
-          img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCtyY0bkF6ZL82jwDNpgIbvqLcuFCaBIvTK8mrv7X_PvGiFsha9g6t45Q5fkr_yWr9E1OUgNNTHGzid8xsQCt14YbEcFFMn7x2T0QdHuet4bTQ9cMh9lVvv08_YLOrcUrg3tfVec2Wi8k9IqFnMb2wiXMX639yRDzfZ1EsvAyRIVuMPSSa3aSH5kxJeKH6Ymz1exadlmwQ6nuxa8Quxfha-Qc_B42dN-mtIggtKake5l8BaT7u2DLf2stKAaNqW1NPWcBY_F8t0dNE",
-          to: "/catalog?cat=classical",
-        },
+       
       ].map((c) => (
         <Link key={c.title} to={c.to} className="group block overflow-hidden rounded-xl">
           <div className="h-56 md:h-64 w-full overflow-hidden rounded-lg">

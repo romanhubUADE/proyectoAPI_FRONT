@@ -1,128 +1,1207 @@
-﻿import { useEffect, useState } from "react";
-import PostCard from "./PostCard";
+﻿===== C:\Users\roman\Desktop\React Fetch\React Fetch\client\src\components\Filters.jsx =====
+export default function Filters() {
+  return (
+    <div className="sticky top-28 rounded-xl border border-primary/20 bg-background-light p-6 dark:border-primary/20 dark:bg-background-dark">
+      <h2 className="text-2xl font-bold text-stone-900 dark:text-white">Filtros</h2>
 
-const CardList = () => {
-  const [posts, setPosts] = useState([]); //{id: body: title:}
-  const URL = "https://jsonplaceholder.typicode.com/posts/"; // `https://jsonplaceholder.typicode.com/posts/${postId}`
+      <div className="mt-6 space-y-6">
+        <div>
+          <h3 className="font-bold text-stone-800 dark:text-stone-200">Marca</h3>
+          <div className="mt-3 space-y-3">
+            {["Harmony", "Silver Creek", "Blue Ridge", "Recording King"].map((m) => (
+              <label key={m} className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  className="h-5 w-5 rounded border-primary/40 bg-transparent text-primary focus:ring-primary focus:ring-offset-background-light dark:focus:ring-offset-background-dark"
+                />
+                <span className="text-sm text-stone-700 dark:text-stone-300">{m}</span>
+              </label>
+            ))}
+          </div>
+        </div>
 
-  useEffect(() => {
-    fetch(URL)
-      .then((response) => response.json())
-      .then((data) => {
-        setPosts(data);
-      })
-      .catch((error) => {
-        console.error("Error al obtener los datos: ", error);
-      });
-  }, []);
+        <div>
+          <h3 className="font-bold text-stone-800 dark:text-stone-200">Tipo de Madera</h3>
+          <div className="mt-3 space-y-3">
+            {["Caoba", "Abeto", "Palisandro"].map((m) => (
+              <label key={m} className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  className="h-5 w-5 rounded border-primary/40 bg-transparent text-primary focus:ring-primary focus:ring-offset-background-light dark:focus:ring-offset-background-dark"
+                />
+                <span className="text-sm text-stone-700 dark:text-stone-300">{m}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <h3 className="font-bold text-stone-800 dark:text-stone-200">Color</h3>
+          <div className="mt-3 space-y-3">
+            {["Natural", "Sunburst", "Negro"].map((m) => (
+              <label key={m} className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  className="h-5 w-5 rounded border-primary/40 bg-transparent text-primary focus:ring-primary focus:ring-offset-background-light dark:focus:ring-offset-background-dark"
+                />
+                <span className="text-sm text-stone-700 dark:text-stone-300">{m}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <h3 className="font-bold text-stone-800 dark:text-stone-200">Rango de Precios</h3>
+          <div className="mt-4">
+            <input
+              type="range"
+              min="100"
+              max="3000"
+              defaultValue="500"
+              className="range-slider h-2 w-full cursor-pointer appearance-none rounded-full bg-primary/30"
+            />
+            <div className="mt-2 flex justify-between text-sm text-stone-600 dark:text-stone-400">
+              <span>$100</span>
+              <span>$3000</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+===== C:\Users\roman\Desktop\React Fetch\React Fetch\client\src\components\NavBar.jsx =====
+import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useShop } from "../context/ShopContext.jsx";
+
+export default function NavBar() {
+  const [query, setQuery] = useState("");
+  const navigate = useNavigate();
+  const { state } = useShop();
+
+  // total de items en el carrito
+  const count = (state?.cart ?? []).reduce(
+    (n, it) => n + (it.qty ?? it.quantity ?? 1),
+    0
+  );
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    const q = query.trim();
+    if (q) navigate(`/catalog?q=${encodeURIComponent(q)}`);
+  };
 
   return (
-    <>
-      <h1>Publicaciones</h1>
-      <div>
-        {posts.map((post) => (
-          <PostCard
-            key={post.id}
-            id={post.id}
-            title={post.title}
-            body={post.body}
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-stone-200 bg-background-light/80 backdrop-blur-sm dark:border-stone-800 dark:bg-background-dark/80">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+        {/* Logo + nombre */}
+        <Link to="/" className="flex items-center gap-3">
+          <svg className="h-6 w-6 text-primary" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M14.25 2.25a.75.75 0 0 0-.75.75v18a.75.75 0 0 0 .75.75h4.5a.75.75 0 0 0 .75-.75V3a.75.75 0 0 0-.75-.75h-4.5ZM15 3.75h3v16.5h-3V3.75Z" />
+            <path d="M4.5 3.75a.75.75 0 0 0-.75.75v15a.75.75 0 0 0 .75.75h4.5a.75.75 0 0 0 .75-.75V4.5a.75.75 0 0 0-.75-.75h-4.5ZM5.25 5.25h3v13.5h-3V5.25Z" />
+          </svg>
+          <h1 className="text-xl font-bold text-stone-900 dark:text-white">String &amp; Soul</h1>
+        </Link>
+{/* MenÃº principal (siempre visible) */}
+<nav className="flex gap-6">
+  <Link to="/catalog?cat=electric" className="text-sm font-medium text-white hover:text-primary">
+    Electric
+  </Link>
+  <Link to="/catalog?cat=acoustic" className="text-sm font-medium text-white hover:text-primary">
+    Acoustic
+  </Link>
+  <Link to="/catalog?cat=bass" className="text-sm font-medium text-white hover:text-primary">
+    Bass
+  </Link>
+</nav>
+
+
+        {/* Buscador + acciones */}
+        <div className="flex items-center gap-3">
+          {/* Buscador */}
+          <form onSubmit={handleSearch} className="relative w-44 sm:w-52 lg:w-64">
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar guitarras..."
+              className="w-full rounded-md border border-stone-300 bg-transparent py-1.5 pl-9 pr-3 text-sm text-stone-800 placeholder-stone-500 focus:border-primary focus:ring-1 focus:ring-primary dark:border-stone-700 dark:text-white dark:placeholder-stone-400"
+            />
+            <svg
+              className="absolute left-2 top-1.5 h-5 w-5 text-stone-500"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1110.65 3a7.5 7.5 0 016 13.65z" />
+            </svg>
+          </form>
+
+          {/* Auth */}
+          <Link
+            to="/login"
+            className="rounded-md px-3 py-2 text-sm font-medium text-stone-700 hover:bg-primary/10 dark:text-stone-200"
+          >
+            Iniciar sesiÃ³n
+          </Link>
+          <Link
+            to="/register"
+            className="rounded-md bg-primary px-3 py-2 text-sm font-semibold text-white hover:opacity-95"
+          >
+            Registrarse
+          </Link>
+
+          {/* Carrito con badge */}
+          <Link
+            to="/cart"
+            className="relative rounded p-2 text-stone-600 hover:bg-primary/10 dark:text-stone-300"
+            aria-label="Carrito"
+          >
+            <svg fill="currentColor" width="20" height="20" viewBox="0 0 256 256">
+              <path d="M222.14,58.87A8,8,0,0,0,216,56H54.68L49.7,27.44A8,8,0,0,0,42,24H16a8,8,0,0,0,0,16H34.29l30.36,139.86A28,28,0,1,0,116,204h76a28,28,0,1,0,27.14-39.13L199.09,88h11.78A8,8,0,0,0,222.14,58.87Z" />
+            </svg>
+            {count > 0 && (
+              <span className="absolute -right-1 -top-1 min-w-[18px] rounded-full bg-primary px-1.5 text-center text-[10px] font-bold leading-4 text-white animate-bounce">
+                {count}
+              </span>
+            )}
+          </Link>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+===== C:\Users\roman\Desktop\React Fetch\React Fetch\client\src\components\ProductCard.jsx =====
+import { Link } from "react-router-dom";
+import { useShop } from "../context/ShopContext.jsx";
+
+export default function ProductCard({ p }) {
+  const { dispatch, priceWithDiscount } = useShop();
+  const final = priceWithDiscount ? priceWithDiscount(p) : p.price;
+
+  return (
+    <article className="group rounded-xl border border-white/10 bg-background-light/60 dark:bg-background-dark/60 overflow-hidden">
+      <Link to={`/product/${p.id}`} className="block">
+        <div className="h-64 w-full overflow-hidden">
+          <img
+            src={p.image || p.images?.[0]}
+            alt={p.name}
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            loading="lazy"
           />
+        </div>
+      </Link>
+
+      <div className="p-4">
+        <Link to={`/product/${p.id}`} className="text-lg font-medium hover:text-primary">
+          {p.name}
+        </Link>
+        <p className="mt-1 text-sm opacity-70">{p.brand || p.category}</p>
+        <div className="mt-2 flex items-center justify-between">
+          <div className="text-base font-semibold text-primary">${final}</div>
+          {p.discount ? (
+            <div className="text-xs line-through opacity-70">${p.price}</div>
+          ) : null}
+        </div>
+        <button
+          onClick={() => dispatch({ type: "ADD", payload: p })}
+          className="mt-3 w-full rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/80"
+        >
+          Add to Cart
+        </button>
+      </div>
+    </article>
+  );
+}
+
+===== C:\Users\roman\Desktop\React Fetch\React Fetch\client\src\context\ShopContext.jsx =====
+// src/context/ShopContext.jsx
+import {createContext, useContext, useEffect, useMemo, useReducer} from 'react'
+import {api, priceWithDiscount} from '../data/mockApi'
+
+const ShopCtx = createContext(null)
+const initial = {
+  products: [],
+  filters: {q:'', cat:'all', min:0, max:99999},
+  cart: [], // {id,name,price,discount,qty}
+  status: 'idle', error: null
+}
+
+function reducer(state, action){
+  switch(action.type){
+    case 'SET_PRODUCTS': return {...state, products: action.payload}
+    case 'SET_FILTERS': return {...state, filters:{...state.filters, ...action.payload}}
+    case 'ADD':{
+      const p=action.payload
+      const i=state.cart.find(x=>x.id===p.id)
+      return {...state, cart: i? state.cart.map(x=>x.id===p.id? {...x, qty:x.qty+1}:x)
+                                 : [...state.cart, {id:p.id,name:p.name,price:p.price,discount:p.discount||0,qty:1}]}
+    }
+    case 'REMOVE': return {...state, cart: state.cart.filter(i=>i.id!==action.payload)}
+    case 'SET_QTY':{
+      const {id,qty}=action.payload
+      return {...state, cart: state.cart.map(i=>i.id===id? {...i, qty:qty||1}:i)}
+    }
+    case 'CLEAR': return {...state, cart: []}
+    case 'STATUS': return {...state, status: action.payload.status, error: action.payload.error||null}
+    default: return state
+  }
+}
+
+export function ShopProvider({children}){
+  const [state, dispatch] = useReducer(reducer, initial)
+
+  useEffect(()=>{ api.list().then(ps=>dispatch({type:'SET_PRODUCTS', payload:ps})) },[])
+
+  const filtered = useMemo(()=>{
+    const {q,cat,min,max}=state.filters
+    return state.products
+      .filter(p=>p.stock>0)
+      .filter(p=>cat==='all'||p.category===cat)
+      .filter(p=>p.name.toLowerCase().includes(q.toLowerCase()))
+      .filter(p=>{ const pr=priceWithDiscount(p); return pr>=min && pr<=max })
+  },[state.products,state.filters])
+
+  const total = useMemo(()=> state.cart
+    .reduce((t,i)=> t + Math.round(i.price*(1-i.discount/100))*i.qty,0), [state.cart])
+
+  const value = {
+    state, dispatch, filtered, total,
+    priceWithDiscount,
+    api // para Admin y Detail
+  }
+  return <ShopCtx.Provider value={value}>{children}</ShopCtx.Provider>
+}
+export const useShop = ()=> useContext(ShopCtx)
+
+===== C:\Users\roman\Desktop\React Fetch\React Fetch\client\src\data\mockApi.js =====
+// src/data/mockApi.js
+const LS = {
+  get:(k,d)=>JSON.parse(localStorage.getItem(k)||JSON.stringify(d)),
+  set:(k,v)=>localStorage.setItem(k,JSON.stringify(v)),
+}
+const seed = [
+  {id:'1', name:'Stratocaster SSS', price:800, stock:5, category:'elÃ©ctrica',
+   images:['https://images.unsplash.com/photo-1511379938547-c1f69419868d'], description:'Cuerpo aliso', discount:0},
+  {id:'2', name:'Les Paul Standard', price:1200, stock:3, category:'elÃ©ctrica',
+   images:['https://images.unsplash.com/photo-1516924962500-2b4b3b4f7f12'], description:'Tapa arce', discount:10},
+  {id:'3', name:'AcÃºstica Cort', price:450, stock:0, category:'acÃºstica',
+   images:['https://images.unsplash.com/photo-1513836279014-a89f7a76ae86'], description:'Spruce top', discount:0},
+]
+function initDB(){
+  const db = LS.get('db', null) ?? { products: seed }
+  LS.set('db', db); return db
+}
+export const api = {
+  list: async ()=> initDB().products,
+  get:  async (id)=> initDB().products.find(p=>p.id===id),
+  create: async (p)=>{ const db=initDB(); db.products.push(p); LS.set('db',db); return p },
+  update: async (p)=>{ const db=initDB(); db.products=db.products.map(x=>x.id===p.id?p:x); LS.set('db',db); return p },
+  remove: async (id)=>{ const db=initDB(); db.products=db.products.filter(x=>x.id!==id); LS.set('db',db) },
+  checkout: async (items)=>{
+    const db=initDB()
+    for(const it of items){
+      const p=db.products.find(x=>x.id===it.id)
+      if(!p || p.stock<it.qty) throw new Error(`Sin stock: ${p?.name||it.id}`)
+    }
+    db.products=db.products.map(p=>{
+      const it=items.find(i=>i.id===p.id)
+      return it? {...p, stock:p.stock-it.qty}:p
+    })
+    LS.set('db',db); return true
+  }
+}
+export const priceWithDiscount = (p)=> Math.round(p.price*(1-(p.discount||0)/100))
+
+===== C:\Users\roman\Desktop\React Fetch\React Fetch\client\src\pages\Account.jsx =====
+// src/pages/Account.jsx
+import { Link } from "react-router-dom";
+
+export default function Account() {
+  // Temporal: datos de ejemplo. Reemplazar con datos reales del contexto auth cuando exista.
+  const user = { name: "Usuario Ejemplo", email: "usuario@ejemplo.com", memberSince: "2024" };
+
+  return (
+    <div className="flex min-h-[70vh] items-start justify-center px-4 py-12 sm:py-20">
+      <div className="w-full max-w-4xl">
+        <div className="grid gap-6 md:grid-cols-3">
+          {/* Perfil */}
+          <div className="rounded-xl bg-white/90 p-6 shadow-md dark:bg-stone-900/90">
+            <div className="flex flex-col items-center gap-4 text-center">
+              <div className="flex h-28 w-28 items-center justify-center rounded-full bg-stone-100 text-2xl font-semibold text-stone-700 dark:bg-stone-700 dark:text-white">
+                {user.name.split(" ").map(n => n[0]).slice(0,2).join("")}
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-stone-900 dark:text-white">{user.name}</h3>
+                <p className="text-sm text-stone-600 dark:text-stone-300">{user.email}</p>
+                <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">Miembro desde {user.memberSince}</p>
+              </div>
+
+              <div className="mt-4 flex w-full flex-col gap-2">
+                <Link to="/account/edit" className="w-full rounded-md border border-stone-200 px-3 py-2 text-center text-sm dark:border-stone-700">Editar perfil</Link>
+                <button className="w-full rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white">Cerrar sesiÃ³n</button>
+              </div>
+            </div>
+          </div>
+
+          {/* Info / Pedidos / Preferencias */}
+          <div className="md:col-span-2 rounded-xl bg-white/90 p-6 shadow-md dark:bg-stone-900/90">
+            <h3 className="mb-4 text-lg font-semibold text-stone-900 dark:text-white">Mi cuenta</h3>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between rounded-md border border-stone-100 p-4 dark:border-stone-700">
+                <div>
+                  <p className="text-sm text-stone-600 dark:text-stone-300">DirecciÃ³n por defecto</p>
+                  <p className="mt-1 text-sm font-medium text-stone-900 dark:text-white">No hay direcciÃ³n registrada</p>
+                </div>
+                <Link to="/account/addresses" className="text-sm text-primary hover:underline">Gestionar</Link>
+              </div>
+
+              <div className="flex items-center justify-between rounded-md border border-stone-100 p-4 dark:border-stone-700">
+                <div>
+                  <p className="text-sm text-stone-600 dark:text-stone-300">Pedidos recientes</p>
+                  <p className="mt-1 text-sm font-medium text-stone-900 dark:text-white">No hay pedidos recientes</p>
+                </div>
+                <Link to="/orders" className="text-sm text-primary hover:underline">Ver pedidos</Link>
+              </div>
+
+              <div className="rounded-md border border-stone-100 p-4 dark:border-stone-700">
+                <p className="text-sm text-stone-600 dark:text-stone-300">Preferencias</p>
+                <div className="mt-3 flex gap-3">
+                  <button className="rounded-md border border-stone-200 px-3 py-1 text-sm text-black dark:text-black dark:border-stone-700">
+                    Email
+                          </button>
+                  <button className="rounded-md border border-stone-200 px-3 py-1 text-sm text-black dark:text-black dark:border-stone-700">
+                    SMS
+                    </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+===== C:\Users\roman\Desktop\React Fetch\React Fetch\client\src\pages\AdminProducts.jsx =====
+// src/pages/AdminProducts.jsx
+import {useEffect, useState} from 'react'
+import {useShop} from '../context/ShopContext'
+import {v4 as uuid} from 'uuid'
+export default function AdminProducts(){
+  const {state:{products}, api} = useShop()
+  const [list,setList]=useState([])
+  const [form,setForm]=useState({name:'',price:0,stock:0,category:'elÃ©ctrica',images:[''],description:'',discount:0})
+  const load=()=> api.list().then(setList)
+  useEffect(load,[])
+  const submit=async(e)=>{ e.preventDefault()
+    const data=form.id? form : {...form, id: uuid()}
+    await (form.id? api.update(data): api.create(data))
+    setForm({name:'',price:0,stock:0,category:'elÃ©ctrica',images:[''],description:'',discount:0})
+    load()
+  }
+  const edit=(p)=> setForm({...p})
+  const del=async(id)=>{ await api.remove(id); load() }
+
+  return (
+    <section style={{padding:16,display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+      <form onSubmit={submit}>
+        <h3>{form.id?'Editar':'Nuevo'} producto</h3>
+        <input placeholder="Nombre" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/>
+        <input type="number" placeholder="Precio" value={form.price} onChange={e=>setForm({...form,price:+e.target.value})}/>
+        <input type="number" placeholder="Stock" value={form.stock} onChange={e=>setForm({...form,stock:+e.target.value})}/>
+        <input placeholder="CategorÃ­a" value={form.category} onChange={e=>setForm({...form,category:e.target.value})}/>
+        <input placeholder="URL imagen" value={form.images[0]||''} onChange={e=>setForm({...form,images:[e.target.value]})}/>
+        <input type="number" placeholder="Descuento %" value={form.discount} onChange={e=>setForm({...form,discount:+e.target.value})}/>
+        <textarea placeholder="DescripciÃ³n" value={form.description} onChange={e=>setForm({...form,description:e.target.value})}/>
+        <button type="submit">Guardar</button>
+      </form>
+
+      <div>
+        <h3>Publicaciones</h3>
+        {(list.length?list:products).map(p=>(
+          <div key={p.id} style={{display:'grid',gridTemplateColumns:'80px 1fr 120px 80px 80px',gap:8,alignItems:'center',marginBottom:8}}>
+            <img src={p.images?.[0]} alt="" style={{width:80,height:60,objectFit:'cover'}}/>
+            <div>{p.name}</div>
+            <div>${p.price} â€¢ Stock {p.stock}</div>
+            <button onClick={()=>edit(p)}>Editar</button>
+            <button onClick={()=>del(p.id)}>Eliminar</button>
+          </div>
         ))}
+      </div>
+    </section>
+  )
+}
+
+===== C:\Users\roman\Desktop\React Fetch\React Fetch\client\src\pages\CartPage.jsx =====
+import { Link, useNavigate } from "react-router-dom";
+import { useShop } from "../context/ShopContext.jsx";
+
+export default function CartPage() {
+  const { state, dispatch, priceWithDiscount } = useShop();
+  const nav = useNavigate();
+
+  const items = state.cart;
+  const subtotal = items.reduce((t, i) => t + priceWithDiscount(i) * i.qty, 0);
+
+  const setQty = (id, qty) => dispatch({ type: "SET_QTY", payload: { id, qty: Math.max(1, qty|0) } });
+
+  return (
+    <main className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
+      <h1 className="text-4xl font-bold">Your Cart</h1>
+
+      <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-[1fr_380px]">
+        {/* listado */}
+        <div className="space-y-6">
+          {items.map(i => (
+            <div key={i.id} className="border-t border-white/10 pt-6">
+              <div className="flex items-center gap-6">
+                <Link to={`/product/${i.id}`} className="block w-28 overflow-hidden rounded-lg bg-stone-200 dark:bg-stone-800">
+                  <img src={i.image} alt={i.name} className="aspect-square w-full object-cover" />
+                </Link>
+
+                <div className="flex-1">
+                  <Link to={`/product/${i.id}`} className="text-lg font-medium hover:text-primary">{i.name}</Link>
+                  <div className="mt-1 text-sm opacity-70">{i.category}</div>
+
+                  <div className="mt-4 flex items-center gap-4">
+                    <button className="rounded border px-2 py-1" onClick={() => setQty(i.id, i.qty - 1)}>-</button>
+                    <input
+                      value={i.qty} onChange={e => setQty(i.id, Number(e.target.value))}
+                      className="w-12 rounded border bg-transparent p-1 text-center"
+                    />
+                    <button className="rounded border px-2 py-1" onClick={() => setQty(i.id, i.qty + 1)}>+</button>
+
+                    <button
+                      onClick={() => dispatch({ type: "REMOVE", payload: i.id })}
+                      className="ml-4 text-sm opacity-80 hover:text-primary"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+
+                <div className="w-28 text-right">
+                  <div className="font-semibold text-primary">${priceWithDiscount(i) * i.qty}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+          {!items.length && <p className="opacity-70">Carrito vacÃ­o.</p>}
+        </div>
+
+        {/* resumen */}
+        <aside className="h-max rounded-xl border border-primary/20 bg-background-light p-6 dark:border-primary/20 dark:bg-background-dark">
+          <h2 className="text-lg font-bold">Order Summary</h2>
+
+          <div className="mt-4 space-y-2 text-sm">
+            <div className="flex justify-between"><span>Subtotal</span><span>${subtotal}</span></div>
+            <div className="flex justify-between"><span>Shipping</span><span>Free</span></div>
+            <div className="flex justify-between"><span>Tax</span><span>$0.00</span></div>
+          </div>
+
+          <div className="mt-4 flex justify-between text-lg font-semibold">
+            <span>Total</span><span>${subtotal}</span>
+          </div>
+
+          <button
+            disabled={!items.length}
+            onClick={() => nav("/checkout")}
+            className="mt-6 w-full rounded-lg bg-primary px-4 py-3 font-semibold text-white hover:bg-primary/80 disabled:opacity-50"
+          >
+            Proceed to Checkout
+          </button>
+        </aside>
+      </div>
+    </main>
+  );
+}
+
+===== C:\Users\roman\Desktop\React Fetch\React Fetch\client\src\pages\Catalog.jsx =====
+import { useMemo } from "react";
+import { useLocation } from "react-router-dom";
+import Filters from "../components/Filters.jsx";
+import ProductCard from "../components/ProductCard.jsx";
+import { useShop } from "../context/ShopContext.jsx";
+
+export default function Catalog() {
+  const { state, priceWithDiscount } = useShop();
+  const { search } = useLocation();
+  const sp = useMemo(() => new URLSearchParams(search), [search]);
+
+  const cat = sp.get("cat") || "all";
+  const q = (sp.get("q") || "").toLowerCase();
+  const min = Number(sp.get("min") || 0);
+  const max = Number(sp.get("max") || Infinity);
+
+  const title = useMemo(() => {
+    if (cat === "acoustic") return "Guitarras AcÃºsticas";
+    if (cat === "electric") return "Guitarras ElÃ©ctricas";
+    if (cat === "bass") return "Bajos";
+    if (cat === "classical") return "Guitarras ClÃ¡sicas";
+    return "CatÃ¡logo";
+  }, [cat]);
+
+  const products = useMemo(() => {
+    return state.products.filter(p => {
+      const inCat = cat === "all" ? true : p.category?.toLowerCase().includes(cat);
+      const text = `${p.name} ${p.brand || ""} ${p.category || ""}`.toLowerCase();
+      const inSearch = q ? text.includes(q) : true;
+      const price = priceWithDiscount ? priceWithDiscount(p) : p.price;
+      const inRange = price >= min && price <= max;
+      return inCat && inSearch && inRange;
+    });
+  }, [state.products, cat, q, min, max, priceWithDiscount]);
+
+  return (
+    <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[280px,1fr]">
+        <Filters />
+
+        <section>
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-stone-900 dark:text-white">
+            {title}
+          </h1>
+
+          <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {products.map(p => (
+              <ProductCard key={p.id} p={p} />
+            ))}
+          </div>
+        </section>
+      </div>
+    </main>
+  );
+}
+
+===== C:\Users\roman\Desktop\React Fetch\React Fetch\client\src\pages\Checkout.jsx =====
+import { useNavigate } from "react-router-dom";
+import { useShop } from "../context/ShopContext.jsx";
+import { useState } from "react";
+
+export default function Checkout() {
+  const { state, dispatch } = useShop();
+  const nav = useNavigate();
+  const [form, setForm] = useState({ email: "", store: "", name: "", last: "" });
+
+  const onSubmit = (e) => {
+    e.preventDefault();
+    if (!state.cart.length) return;
+    dispatch({ type: "CLEAR" });
+    nav("/");
+  };
+
+  return (
+    <main className="mx-auto max-w-3xl p-4 sm:p-6 lg:p-8">
+      <h1 className="text-3xl font-bold">InformaciÃ³n</h1>
+
+      <form onSubmit={onSubmit} className="mt-8 space-y-8">
+        <section>
+          <h2 className="text-xl font-semibold">Contacto</h2>
+          <input
+            type="email" required placeholder="Email"
+            value={form.email}
+            onChange={e => setForm({ ...form, email: e.target.value })}
+            className="mt-3 w-full rounded-lg border bg-transparent px-4 py-3"
+          />
+          <label className="mt-3 flex items-center gap-2 text-sm opacity-80">
+            <input type="checkbox" className="h-4 w-4 rounded" />
+            Mantenerme al dÃ­a sobre ofertas.
+          </label>
+        </section>
+
+        <section>
+          <h2 className="text-xl font-semibold">Retiro en Sucursal</h2>
+          <select
+            required
+            value={form.store}
+            onChange={e => setForm({ ...form, store: e.target.value })}
+            className="mt-3 w-full rounded-lg border bg-transparent px-4 py-3"
+          >
+            <option value="" disabled>Seleccione una sucursal</option>
+            <option value="Centro">Centro</option>
+            <option value="Norte">Norte</option>
+            <option value="Sur">Sur</option>
+          </select>
+
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <input
+              required placeholder="Nombre"
+              value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
+              className="rounded-lg border bg-transparent px-4 py-3"
+            />
+            <input
+              required placeholder="Apellido"
+              value={form.last} onChange={e => setForm({ ...form, last: e.target.value })}
+              className="rounded-lg border bg-transparent px-4 py-3"
+            />
+          </div>
+        </section>
+
+        <button
+          type="submit"
+          disabled={!state.cart.length}
+          className="w-full rounded-lg bg-primary px-6 py-3 font-semibold text-white hover:bg-primary/80 disabled:opacity-50"
+        >
+          Continuar al pago
+        </button>
+      </form>
+    </main>
+  );
+}
+
+===== C:\Users\roman\Desktop\React Fetch\React Fetch\client\src\pages\Home.jsx =====
+import { Link } from "react-router-dom";
+
+export default function Home() {
+  return (
+    <main className="flex-1">
+      {/* HERO */}
+      <section className="py-12 md:py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div
+            className="relative flex min-h-[480px] items-center justify-center overflow-hidden rounded-xl bg-cover bg-center p-8 text-center"
+            style={{
+              backgroundImage:
+                'linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.5)), url("https://lh3.googleusercontent.com/aida-public/AB6AXuBSfetmgcEEAPqxn90x0d4neJA5JipPFfgpYlgL4mU2dKmIghVxndjkaq_klTgQVjHsWal3yO9o1IKNbR_WlUwcOkVT5GxkLOArd0l_sbF4r81vrV8F4bLuy1emgFGZrWH8clsIvvJRXez3BSAE2C_YKuDPPTzCmDfFGBObaYgrttUmJjMSzuXO_0UcR7hSc9kbXRKJFZ2o8hfPZgYF82bWBjAj8WuE-KZY1mSHVbSfcwiAZBIOJMsOC3b_zDSfJAlIg1P17Bujblc")',
+            }}
+          >
+            <div className="flex flex-col items-center gap-6">
+              <div className="flex flex-col gap-2 text-white">
+                <h1 className="text-4xl font-extrabold md:text-6xl">
+                  Find Your Perfect Sound
+                </h1>
+                <p className="text-base font-light md:text-lg">
+                  Explore our curated collection of guitars, crafted for every style and skill level.
+                </p>
+              </div>
+              <Link
+                to="/catalog"
+                className="rounded-lg bg-primary px-8 py-3 text-base font-bold text-white transition hover:bg-primary/80"
+              >
+                Shop Now
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+ {/* FEATURED */}
+<section className="py-12 md:py-16">
+  <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <h2 className="text-2xl font-bold text-stone-900 dark:text-white">Featured Guitars</h2>
+
+    <div className="mt-6 flex gap-6 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-4">
+      {[
+        {
+          title: "The 'Prairie Song' Acoustic",
+          text: "Warm tones and classic design, perfect for folk and country.",
+          img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCbyAw1shFLNrByQTuJUfCswlhCQApIemwNPM1O9P_L30Gummo2qXrqGX4rpy-dSoC7iVKjZP6oZLtCwQ7txo_v5fKQbgJul8944hF7ZvFJor6rhY4wUIgT8GGsyOxEXChvybbfR2TGsR-t21WoBtNc4t14wzllEKCIxL-Zw6C-8t6px-9WpxdSo93y0jjPns69pWTI6hgeimgsjOhpgnLwkLndL9Oz7sTHVfCzOaQ66ft88TiyanXcoE8hENaJHnzAOKO8xcjQCDg",
+        },
+        {
+          title: "The 'Midnight Rider' Electric",
+          text: "Powerful sound and sleek design, ideal for rock and blues.",
+          img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDc3YoEwzEII_0C0dsYKn16VYxIJZR7WOgIxADOQ36c64hGUn1XhqMxDNAZhvPiPpOFllp6XHQ-eOgThgVclm02ZUnE7aNuxAgrTKfVTjMuydjVjNQAIaovP4PXuP531hRKBDkGGFH4BmiGweHxAxF85q_TDjuTkoYgsTg-aI4VKnYhMp0B1NlUCCJCiCzSvPnIfVxW-x8v5qUcnV_p2ytLQwkk0R0zi0q5X8YS1977ovB9aITY-rJx9K0FT_d3-BqvMiJkc6FXOLk",
+        },
+        {
+          title: "The 'Thunder Road' Bass",
+          text: "Deep, resonant bass with a comfortable feel for any genre.",
+          img: "https://lh3.googleusercontent.com/aida-public/AB6AXuBMVm6UaGcXN1cCxCC9Hx6Cv6HTkhWExLmaCBubUrqrbtYSj8bgz7SlVA7cgjlSeuBu5mR3DobuEzhKFvnapIjF68bb2CZQjpDlltmLJ2oZpcS6JzFM4I7wPPLShxA5t8mDRnSYqsmwMmFjaOMTVaS79qf9deXtOXrRHNxTP76w6muc-Rwr1MD8X8kVvk63snTzlbL3ypF60ZkUX6z0g2lF60inSdAjCOUNngLqI314t2iEcn1E9TtJp78IM-qAxncnVx3BALf1kKA",
+        },
+      ].map((c) => (
+        <div key={c.title} className="w-80 flex-shrink-0 snap-center">
+          <div className="group flex flex-col gap-3">
+            <div className="aspect-[4/3] overflow-hidden rounded-lg">
+              <img
+                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                src={c.img}
+                alt={c.title}
+              />
+            </div>
+            <div>
+              <h3 className="font-semibold text-stone-900 dark:text-white">{c.title}</h3>
+              <p className="text-sm text-stone-600 dark:text-stone-400">{c.text}</p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+{/* SHOP BY CATEGORY */}
+<section className="py-12 md:py-16">
+  <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <h2 className="text-2xl font-bold text-stone-900 dark:text-white">Shop by Category</h2>
+
+    <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-6">
+      {[
+        {
+          title: "Acoustic Guitars",
+          text: "Explore our range of acoustic guitars.",
+          img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDJrIylck-_TSgSDirpXHOfdt1uv835vHVw3odnmBaNB_lcYNckSLAlmFoK_eXrrsjG8C0c2irKLty2K5Nhfg_EyiYEy8EMTSo0Wy092fXNr2heG3F40q1hzqALMGnIZ6SdImImWd5aa5-yfmTvUgesyIJqiL4WBL1rvln95_YCA_M1eG4Mh-s55WU_B3XSiJuE8iIyxJH2ALWDJvzCdubVW7KA3wdaSOvU68T_B2_eBJUKqCnfGvujSmvero-vhOmSsvIRRpeiKZM",
+          to: "/catalog?cat=acoustic",
+        },
+        {
+          title: "Electric Guitars",
+          text: "Discover our selection of electric guitars.",
+          img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAZh1SmUPXygK5USePgwL7LPF4vHkS1QIHzyVbs1jbHXtQ-wJIkH2BoRPJwX1YKY9BAYfJ4sdru-FOtytDlZmyOyTv0i8bQUUBdnWmZ4fS2l_o243vL9gVU801I_5iGNMLb4u8xbtrS41hdOftpb2pPtoAjfvEv9cFH4R_Q50wBKFE8eD7RBACwRXLQSOBC8GsBMiar8wNKtq-r8gIKRB2Td7Byowz4F3pJ5QM3A8OtJ5sScjHAEcI6Sg0G7hLR2t_p_FdZz_MSLZE",
+          to: "/catalog?cat=electric",
+        },
+        {
+          title: "Bass Guitars",
+          text: "Find the perfect bass guitar for your style.",
+          img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDqnpHQE5yhMjM5ZOSN1dQUs-aGIgzx4iMtTyk3J1pcIYwH8by3PyAx02riMLYf7OIn-KuP43RtnL_qNkIRzQS2Sv852HnAAlNFnUmZhF39yzc30W80GKjBhK2hhJl_PLvX0nsOgiWgCJYFRyUYwSywt0LUEPsIi9VGG_cDCtmyYejC72HEqFOmYAym8Iyv4If-5LaVNsF0ZwaVZ_56qtqe1ZN3fnrtW38IJbWFRDQ9HlnM4AeoGFLYZA-_IWU9mhQoLoIBaBGMWvA",
+          to: "/catalog?cat=bass",
+        },
+      ].map((c) => (
+        <Link key={c.title} to={c.to} className="group block overflow-hidden rounded-xl">
+          <div className="aspect-square overflow-hidden rounded-lg">
+            <img
+              src={c.img}
+              alt={c.title}
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+          </div>
+          <div className="mt-3">
+            <h3 className="font-semibold text-stone-900 dark:text-white">{c.title}</h3>
+            <p className="text-sm text-stone-600 dark:text-stone-400">{c.text}</p>
+          </div>
+        </Link>
+      ))}
+    </div>
+  </div>
+</section>
+
+    </main>
+  );
+}
+
+
+===== C:\Users\roman\Desktop\React Fetch\React Fetch\client\src\pages\Login.jsx =====
+// src/pages/Login.jsx
+import { Link } from "react-router-dom";
+
+export default function Login() {
+  return (
+    <div className="flex min-h-[70vh] items-center justify-center px-4 py-12 sm:py-20">
+      <div className="w-full max-w-md">
+        <div className="rounded-xl bg-white/90 p-8 shadow-md dark:bg-stone-900/90">
+          <h2 className="mb-2 text-2xl font-semibold text-stone-900 dark:text-white">Bienvenido de nuevo</h2>
+          <p className="mb-6 text-sm text-stone-600 dark:text-stone-300">Inicia sesiÃ³n con tu cuenta para continuar</p>
+
+          <form className="space-y-4">
+            <label className="block">
+              <span className="text-sm text-stone-700 dark:text-stone-200">E-mail</span>
+              <input
+                type="email"
+                name="email"
+                required
+                className="mt-1 block w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm shadow-sm placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-primary dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
+                placeholder="tu@ejemplo.com"
+              />
+            </label>
+
+            <label className="block">
+              <span className="text-sm text-stone-700 dark:text-stone-200">ContraseÃ±a</span>
+              <input
+                type="password"
+                name="password"
+                required
+                className="mt-1 block w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm shadow-sm placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-primary dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
+                placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+              />
+            </label>
+
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300">
+                <input type="checkbox" className="h-4 w-4 rounded border-stone-300 bg-white text-primary focus:ring-primary" />
+                <span>Recordarme</span>
+              </label>
+              <Link to="#" className="text-sm text-primary hover:underline">Â¿Olvidaste la contraseÃ±a?</Link>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-95"
+            >
+              Iniciar sesiÃ³n
+            </button>
+          </form>
+
+          <p className="mt-6 text-center text-sm text-stone-600 dark:text-stone-300">
+            Â¿No tenÃ©s cuenta?{" "}
+            <Link to="/register" className="font-medium text-primary hover:underline">
+              Registrate
+            </Link>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+===== C:\Users\roman\Desktop\React Fetch\React Fetch\client\src\pages\NotFound.jsx =====
+
+===== C:\Users\roman\Desktop\React Fetch\React Fetch\client\src\pages\ProductDetail.jsx =====
+import { useParams } from "react-router-dom";
+import { useShop } from "../context/ShopContext.jsx";
+
+export default function ProductDetail() {
+  const { id } = useParams();
+  const { state, dispatch, priceWithDiscount } = useShop();
+
+  const p = state.products.find(x => String(x.id) === id);
+  if (!p) return <main className="mx-auto max-w-7xl p-6">Producto no encontrado.</main>;
+
+  const final = priceWithDiscount(p);
+
+  return (
+    <main className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
+      <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
+        {/* galerÃ­a simple */}
+        <div>
+          <div className="overflow-hidden rounded-xl bg-stone-200 dark:bg-stone-800">
+            <img src={p.image} alt={p.name} className="w-full object-cover" />
+          </div>
+          {Array.isArray(p.gallery) && p.gallery.length ? (
+            <div className="mt-4 grid grid-cols-3 gap-3">
+              {p.gallery.map((g, i) => (
+                <img key={i} src={g} alt={`${p.name}-${i}`} className="aspect-square w-full rounded-lg object-cover" />
+              ))}
+            </div>
+          ) : null}
+        </div>
+
+        {/* info */}
+        <div>
+          <h1 className="text-3xl font-bold">{p.name}</h1>
+          <p className="mt-2 opacity-80">{p.short || p.description || "â€”"}</p>
+
+          <div className="mt-6 flex items-end gap-3">
+            <div className="text-3xl font-extrabold text-primary">${final}</div>
+            {p.discount ? <div className="text-lg line-through opacity-60">${p.price}</div> : null}
+          </div>
+
+          <div className="mt-6 flex gap-3">
+            <button
+              onClick={() => dispatch({ type: "ADD", payload: p })}
+              className="rounded-lg bg-primary px-6 py-3 font-semibold text-white hover:bg-primary/80"
+            >
+              Add to Cart
+            </button>
+            <span className="self-center text-sm opacity-70">{p.stock > 0 ? `${p.stock} en stock` : "Sin stock"}</span>
+          </div>
+
+          {/* specs opcionales */}
+          <div className="mt-10">
+            <h2 className="mb-3 text-xl font-bold">Specifications</h2>
+            <dl className="-mx-4 divide-y divide-white/10 rounded-lg border border-white/10">
+              {[
+                ["Top Wood", p.topWood || p.woodTop],
+                ["Back & Sides", p.backSides || p.wood],
+                ["Neck", p.neck],
+                ["Fretboard", p.fretboard],
+                ["Scale", p.scale],
+                ["Finish", p.finish],
+              ].filter(([, v]) => v).map(([k, v]) => (
+                <div key={k} className="grid grid-cols-2 gap-4 px-4 py-3">
+                  <dt className="opacity-70">{k}</dt>
+                  <dd className="text-right">{v}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </div>
+      </div>
+
+      {/* reviews placeholder */}
+      <section className="mt-14">
+        <h2 className="text-xl font-bold">Customer Reviews</h2>
+        <p className="mt-2 text-sm opacity-70">PrÃ³ximamente.</p>
+      </section>
+    </main>
+  );
+}
+
+===== C:\Users\roman\Desktop\React Fetch\React Fetch\client\src\pages\Register.jsx =====
+// src/pages/Register.jsx
+import { Link } from "react-router-dom";
+
+export default function Register() {
+  return (
+    <div className="flex min-h-[70vh] items-center justify-center px-4 py-12 sm:py-20">
+      <div className="w-full max-w-lg">
+        <div className="rounded-xl bg-white/90 p-8 shadow-md dark:bg-stone-900/90">
+          <h2 className="mb-2 text-2xl font-semibold text-stone-900 dark:text-white">Crea tu cuenta</h2>
+          <p className="mb-6 text-sm text-stone-600 dark:text-stone-300">RegÃ­strate para acceder a ventas, listas y tu cuenta</p>
+
+          <form className="grid gap-4">
+            <div>
+              <label className="block text-sm text-stone-700 dark:text-stone-200">Nombre completo</label>
+              <input type="text" required className="mt-1 block w-full rounded-md border border-stone-200 px-3 py-2 text-sm placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-primary dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100" placeholder="Tu nombre" />
+            </div>
+
+            <div>
+              <label className="block text-sm text-stone-700 dark:text-stone-200">E-mail</label>
+              <input type="email" required className="mt-1 block w-full rounded-md border border-stone-200 px-3 py-2 text-sm placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-primary dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100" placeholder="tu@ejemplo.com" />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="block text-sm text-stone-700 dark:text-stone-200">ContraseÃ±a</label>
+                <input type="password" required className="mt-1 block w-full rounded-md border border-stone-200 px-3 py-2 text-sm placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-primary dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" />
+              </div>
+              <div>
+                <label className="block text-sm text-stone-700 dark:text-stone-200">Confirmar contraseÃ±a</label>
+                <input type="password" required className="mt-1 block w-full rounded-md border border-stone-200 px-3 py-2 text-sm placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-primary dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" />
+              </div>
+            </div>
+
+            <button type="submit" className="mt-2 w-full rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-95">
+              Crear cuenta
+            </button>
+          </form>
+
+          <p className="mt-6 text-center text-sm text-stone-600 dark:text-stone-300">
+            Â¿Ya tenÃ©s una cuenta?{" "}
+            <Link to="/login" className="font-medium text-primary hover:underline">
+              Iniciar sesiÃ³n
+            </Link>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+===== C:\Users\roman\Desktop\React Fetch\React Fetch\client\src\styles\App.css =====
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+/* Quita cualquier desplazamiento lateral â€œfantasmaâ€ */
+* { box-sizing: border-box; }
+html, body, #root {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  max-width: 100vw !important;
+}
+body, #root {
+  overflow-x: hidden !important;
+}
+/* Por si quedÃ³ algÃºn layout con sidebar de ejemplos */
+.App, .layout, main, .page {
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+}
+
+html, :root { font-size: 16px !important; }
+body { transform: none !important; zoom: 1 !important; }
+
+
+
+===== C:\Users\roman\Desktop\React Fetch\React Fetch\client\src\styles\index.css =====
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+a:hover {
+  color: #535bf2;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+  
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a1a1a;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+button:hover {
+  border-color: #646cff;
+}
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
+  }
+  a:hover {
+    color: #747bff;
+  }
+  button {
+    background-color: #f9f9f9;
+  }
+  /* Thumb del slider para coincidir con la maqueta */
+.range-slider::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;width:1rem;height:1rem;background:#b86614;border-radius:9999px;cursor:pointer;margin-top:-4px;
+}
+.range-slider::-moz-range-thumb{
+  width:1rem;height:1rem;background:#b86614;border-radius:9999px;cursor:pointer;
+}
+
+/* Importante: NO escalar imÃ¡genes globalmente */
+img{max-width:100%;height:auto;}
+
+}
+
+===== C:\Users\roman\Desktop\React Fetch\React Fetch\client\src\styles\reset.css =====
+/* reset: quita gutters/offsets globales */
+*{box-sizing:border-box}
+html,body,#root{
+  margin:0 !important;
+  padding:0 !important;
+  width:100% !important;
+  max-width:100vw !important;
+}
+body,#root{overflow-x:hidden !important}
+
+/* por si quedÃ³ algÃºn layout de ejemplo con sidebar */
+.App,.layout,main,.page{
+  margin-left:0 !important;
+  padding-left:0 !important;
+  transform:none !important;
+}
+
+===== C:\Users\roman\Desktop\React Fetch\React Fetch\client\src\App.jsx =====
+import { Routes, Route, Navigate } from "react-router-dom";
+import NavBar from "./components/NavBar.jsx";
+import Home from "./pages/Home.jsx";
+import Catalog from "./pages/Catalog.jsx";
+import ProductDetail from "./pages/ProductDetail.jsx";
+import CartPage from "./pages/CartPage.jsx";
+import Checkout from "./pages/Checkout.jsx";
+import Login from "./pages/Login.jsx";
+import Register from "./pages/Register.jsx";
+import Account from "./pages/Account.jsx";
+
+export default function App() {
+  return (
+    <>
+      <NavBar />
+      <div className="pt-16">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/catalog" element={<Catalog />} />
+          <Route path="/product/:id" element={<ProductDetail />} />
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/account" element={<Account />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </div>
     </>
   );
-};
-
-export default CardList;
-
-// localStorage.setItem('jwtToken', data.token)
-// const token  = localStorage.getItem('jwtToken')
-// const [name, setName] = useState("");
-// const [description, setDescription] = useState("");
-// const [products, setProducts] = useState([]);
-// const [token, setToken] = useState("");
-// const URL = "localhost:8080/products";
-// const datosAEnviar ={
-//     name: name,
-//     description: description
-// }
-
-// const options = {
-//   method: "POST",
-//   header: {
-//     "Content-Type": "application/json",
-//     Authorization: `Bearer ${token}`,
-//   },
-//   body: JSON.stringify(datosAEnviar),
-// };
-
-// useEffect(() => {
-//   fetch(URL, options)
-//     .then((response) => response.json())
-//     .then((data) => {
-//       setProducts([...products, {data}]);
-//     })
-//     .catch((error) => {
-//         console.error("Error al obtener los datos: ", error);
-//       });
-// }, [products]);
-import { useEffect, useState } from "react"
-
-const ExampleComponent = () => {
-
-    const [count, setCount] = useState(0)
-    
-    useEffect(()=>{
-        document.title = `Contador: ${count}`
-    },[count])
-
-    return(
-        <>
-        <p>Contador: {count}</p>
-        <button onClick={()=> setCount(count + 1)}>Incrementar</button>
-        
-        </>
-    )
 }
 
-export default ExampleComponent
-const PostCard = ({id, title,body})=>{
-    return(
-        <>
-        <h4>{id}</h4>
-        <h3>{title}</h3>
-        <p>{body}</p>
-        </>
-    )
-}
+===== C:\Users\roman\Desktop\React Fetch\React Fetch\client\src\main.jsx =====
+import { StrictMode } from 'react'
+import './styles/reset.css'
+import { createRoot } from 'react-dom/client'
+import { BrowserRouter } from 'react-router-dom'
+import { ShopProvider } from './context/ShopContext.jsx'
+import App from './App.jsx'
+import './styles/index.css'
 
-export default PostCard
-import "./App.css";
-import CardList from "./components/CardList";
-import ExampleComponent from "./components/ExampleComponent";
-
-function App() {
-  return (
-    <>
-      <CardList />
-    </>
-  );
-}
-
-export default App;
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import "./index.css";
-import App from "./App.jsx";
-import { BrowserRouter } from "react-router-dom";
-
-createRoot(document.getElementById("root")).render(
-  <StrictMode>
+createRoot(document.getElementById('root')).render(
     <BrowserRouter>
-      <App />
+      <ShopProvider>
+        <App />
+      </ShopProvider>
     </BrowserRouter>
-  </StrictMode>
-);
+)
+
+===== C:\Users\roman\Desktop\React Fetch\React Fetch\client\eslint.config.js =====
 import js from '@eslint/js'
 import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
@@ -152,19 +1231,48 @@ export default defineConfig([
     },
   },
 ])
+
+===== C:\Users\roman\Desktop\React Fetch\React Fetch\client\index.html =====
 <!doctype html>
-<html lang="en">
+<html class="dark" lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>client</title>
+    <title>String & Soul</title>
+    <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64," />
+    <!-- Tailwind CDN + config -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&display=swap" rel="stylesheet" />
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#b86614",
+              "background-light": "#f8f7f6",
+              "background-dark": "#211911",
+            },
+            fontFamily: { display: ["Newsreader"] },
+            borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px" },
+          },
+        },
+      };
+    </script>
+    <style>
+      .no-scrollbar::-webkit-scrollbar{display:none}
+      .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none }
+    </style>
   </head>
-  <body>
+  <body class="bg-background-light dark:bg-background-dark font-display text-stone-800 dark:text-stone-200">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
+
+===== C:\Users\roman\Desktop\React Fetch\React Fetch\client\package-lock.json =====
 {
   "name": "client",
   "version": "0.0.0",
@@ -181,14 +1289,32 @@ export default defineConfig([
       },
       "devDependencies": {
         "@eslint/js": "^9.36.0",
+        "@tailwindcss/aspect-ratio": "^0.4.2",
+        "@tailwindcss/postcss": "^4.1.14",
         "@types/react": "^19.1.13",
         "@types/react-dom": "^19.1.9",
         "@vitejs/plugin-react": "^5.0.3",
+        "autoprefixer": "^10.4.21",
         "eslint": "^9.36.0",
         "eslint-plugin-react-hooks": "^5.2.0",
         "eslint-plugin-react-refresh": "^0.4.20",
         "globals": "^16.4.0",
+        "postcss": "^8.5.6",
+        "tailwindcss": "^4.1.14",
         "vite": "^7.1.7"
+      }
+    },
+    "node_modules/@alloc/quick-lru": {
+      "version": "5.2.0",
+      "resolved": "https://registry.npmjs.org/@alloc/quick-lru/-/quick-lru-5.2.0.tgz",
+      "integrity": "sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=10"
+      },
+      "funding": {
+        "url": "https://github.com/sponsors/sindresorhus"
       }
     },
     "node_modules/@babel/code-frame": {
@@ -1121,6 +2247,19 @@ export default defineConfig([
         "url": "https://github.com/sponsors/nzakas"
       }
     },
+    "node_modules/@isaacs/fs-minipass": {
+      "version": "4.0.1",
+      "resolved": "https://registry.npmjs.org/@isaacs/fs-minipass/-/fs-minipass-4.0.1.tgz",
+      "integrity": "sha512-wgm9Ehl2jpeqP3zw/7mo3kRHFp5MEDhqAdwy1fTGkHAwnkGOVsgpvQhL8B5n1qlb01jV3n/bI0ZfZp5lWA1k4w==",
+      "dev": true,
+      "license": "ISC",
+      "dependencies": {
+        "minipass": "^7.0.4"
+      },
+      "engines": {
+        "node": ">=18.0.0"
+      }
+    },
     "node_modules/@jridgewell/gen-mapping": {
       "version": "0.3.13",
       "resolved": "https://registry.npmjs.org/@jridgewell/gen-mapping/-/gen-mapping-0.3.13.tgz",
@@ -1486,6 +2625,292 @@ export default defineConfig([
         "win32"
       ]
     },
+    "node_modules/@tailwindcss/aspect-ratio": {
+      "version": "0.4.2",
+      "resolved": "https://registry.npmjs.org/@tailwindcss/aspect-ratio/-/aspect-ratio-0.4.2.tgz",
+      "integrity": "sha512-8QPrypskfBa7QIMuKHg2TA7BqES6vhBrDLOv8Unb6FcFyd3TjKbc6lcmb9UPQHxfl24sXoJ41ux/H7qQQvfaSQ==",
+      "dev": true,
+      "license": "MIT",
+      "peerDependencies": {
+        "tailwindcss": ">=2.0.0 || >=3.0.0 || >=3.0.0-alpha.1"
+      }
+    },
+    "node_modules/@tailwindcss/node": {
+      "version": "4.1.14",
+      "resolved": "https://registry.npmjs.org/@tailwindcss/node/-/node-4.1.14.tgz",
+      "integrity": "sha512-hpz+8vFk3Ic2xssIA3e01R6jkmsAhvkQdXlEbRTk6S10xDAtiQiM3FyvZVGsucefq764euO/b8WUW9ysLdThHw==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@jridgewell/remapping": "^2.3.4",
+        "enhanced-resolve": "^5.18.3",
+        "jiti": "^2.6.0",
+        "lightningcss": "1.30.1",
+        "magic-string": "^0.30.19",
+        "source-map-js": "^1.2.1",
+        "tailwindcss": "4.1.14"
+      }
+    },
+    "node_modules/@tailwindcss/oxide": {
+      "version": "4.1.14",
+      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide/-/oxide-4.1.14.tgz",
+      "integrity": "sha512-23yx+VUbBwCg2x5XWdB8+1lkPajzLmALEfMb51zZUBYaYVPDQvBSD/WYDqiVyBIo2BZFa3yw1Rpy3G2Jp+K0dw==",
+      "dev": true,
+      "hasInstallScript": true,
+      "license": "MIT",
+      "dependencies": {
+        "detect-libc": "^2.0.4",
+        "tar": "^7.5.1"
+      },
+      "engines": {
+        "node": ">= 10"
+      },
+      "optionalDependencies": {
+        "@tailwindcss/oxide-android-arm64": "4.1.14",
+        "@tailwindcss/oxide-darwin-arm64": "4.1.14",
+        "@tailwindcss/oxide-darwin-x64": "4.1.14",
+        "@tailwindcss/oxide-freebsd-x64": "4.1.14",
+        "@tailwindcss/oxide-linux-arm-gnueabihf": "4.1.14",
+        "@tailwindcss/oxide-linux-arm64-gnu": "4.1.14",
+        "@tailwindcss/oxide-linux-arm64-musl": "4.1.14",
+        "@tailwindcss/oxide-linux-x64-gnu": "4.1.14",
+        "@tailwindcss/oxide-linux-x64-musl": "4.1.14",
+        "@tailwindcss/oxide-wasm32-wasi": "4.1.14",
+        "@tailwindcss/oxide-win32-arm64-msvc": "4.1.14",
+        "@tailwindcss/oxide-win32-x64-msvc": "4.1.14"
+      }
+    },
+    "node_modules/@tailwindcss/oxide-android-arm64": {
+      "version": "4.1.14",
+      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-android-arm64/-/oxide-android-arm64-4.1.14.tgz",
+      "integrity": "sha512-a94ifZrGwMvbdeAxWoSuGcIl6/DOP5cdxagid7xJv6bwFp3oebp7y2ImYsnZBMTwjn5Ev5xESvS3FFYUGgPODQ==",
+      "cpu": [
+        "arm64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "android"
+      ],
+      "engines": {
+        "node": ">= 10"
+      }
+    },
+    "node_modules/@tailwindcss/oxide-darwin-arm64": {
+      "version": "4.1.14",
+      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-darwin-arm64/-/oxide-darwin-arm64-4.1.14.tgz",
+      "integrity": "sha512-HkFP/CqfSh09xCnrPJA7jud7hij5ahKyWomrC3oiO2U9i0UjP17o9pJbxUN0IJ471GTQQmzwhp0DEcpbp4MZTA==",
+      "cpu": [
+        "arm64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "darwin"
+      ],
+      "engines": {
+        "node": ">= 10"
+      }
+    },
+    "node_modules/@tailwindcss/oxide-darwin-x64": {
+      "version": "4.1.14",
+      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-darwin-x64/-/oxide-darwin-x64-4.1.14.tgz",
+      "integrity": "sha512-eVNaWmCgdLf5iv6Qd3s7JI5SEFBFRtfm6W0mphJYXgvnDEAZ5sZzqmI06bK6xo0IErDHdTA5/t7d4eTfWbWOFw==",
+      "cpu": [
+        "x64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "darwin"
+      ],
+      "engines": {
+        "node": ">= 10"
+      }
+    },
+    "node_modules/@tailwindcss/oxide-freebsd-x64": {
+      "version": "4.1.14",
+      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-freebsd-x64/-/oxide-freebsd-x64-4.1.14.tgz",
+      "integrity": "sha512-QWLoRXNikEuqtNb0dhQN6wsSVVjX6dmUFzuuiL09ZeXju25dsei2uIPl71y2Ic6QbNBsB4scwBoFnlBfabHkEw==",
+      "cpu": [
+        "x64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "freebsd"
+      ],
+      "engines": {
+        "node": ">= 10"
+      }
+    },
+    "node_modules/@tailwindcss/oxide-linux-arm-gnueabihf": {
+      "version": "4.1.14",
+      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-linux-arm-gnueabihf/-/oxide-linux-arm-gnueabihf-4.1.14.tgz",
+      "integrity": "sha512-VB4gjQni9+F0VCASU+L8zSIyjrLLsy03sjcR3bM0V2g4SNamo0FakZFKyUQ96ZVwGK4CaJsc9zd/obQy74o0Fw==",
+      "cpu": [
+        "arm"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ],
+      "engines": {
+        "node": ">= 10"
+      }
+    },
+    "node_modules/@tailwindcss/oxide-linux-arm64-gnu": {
+      "version": "4.1.14",
+      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-linux-arm64-gnu/-/oxide-linux-arm64-gnu-4.1.14.tgz",
+      "integrity": "sha512-qaEy0dIZ6d9vyLnmeg24yzA8XuEAD9WjpM5nIM1sUgQ/Zv7cVkharPDQcmm/t/TvXoKo/0knI3me3AGfdx6w1w==",
+      "cpu": [
+        "arm64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ],
+      "engines": {
+        "node": ">= 10"
+      }
+    },
+    "node_modules/@tailwindcss/oxide-linux-arm64-musl": {
+      "version": "4.1.14",
+      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-linux-arm64-musl/-/oxide-linux-arm64-musl-4.1.14.tgz",
+      "integrity": "sha512-ISZjT44s59O8xKsPEIesiIydMG/sCXoMBCqsphDm/WcbnuWLxxb+GcvSIIA5NjUw6F8Tex7s5/LM2yDy8RqYBQ==",
+      "cpu": [
+        "arm64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ],
+      "engines": {
+        "node": ">= 10"
+      }
+    },
+    "node_modules/@tailwindcss/oxide-linux-x64-gnu": {
+      "version": "4.1.14",
+      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-linux-x64-gnu/-/oxide-linux-x64-gnu-4.1.14.tgz",
+      "integrity": "sha512-02c6JhLPJj10L2caH4U0zF8Hji4dOeahmuMl23stk0MU1wfd1OraE7rOloidSF8W5JTHkFdVo/O7uRUJJnUAJg==",
+      "cpu": [
+        "x64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ],
+      "engines": {
+        "node": ">= 10"
+      }
+    },
+    "node_modules/@tailwindcss/oxide-linux-x64-musl": {
+      "version": "4.1.14",
+      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-linux-x64-musl/-/oxide-linux-x64-musl-4.1.14.tgz",
+      "integrity": "sha512-TNGeLiN1XS66kQhxHG/7wMeQDOoL0S33x9BgmydbrWAb9Qw0KYdd8o1ifx4HOGDWhVmJ+Ul+JQ7lyknQFilO3Q==",
+      "cpu": [
+        "x64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "linux"
+      ],
+      "engines": {
+        "node": ">= 10"
+      }
+    },
+    "node_modules/@tailwindcss/oxide-wasm32-wasi": {
+      "version": "4.1.14",
+      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-wasm32-wasi/-/oxide-wasm32-wasi-4.1.14.tgz",
+      "integrity": "sha512-uZYAsaW/jS/IYkd6EWPJKW/NlPNSkWkBlaeVBi/WsFQNP05/bzkebUL8FH1pdsqx4f2fH/bWFcUABOM9nfiJkQ==",
+      "bundleDependencies": [
+        "@napi-rs/wasm-runtime",
+        "@emnapi/core",
+        "@emnapi/runtime",
+        "@tybys/wasm-util",
+        "@emnapi/wasi-threads",
+        "tslib"
+      ],
+      "cpu": [
+        "wasm32"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "dependencies": {
+        "@emnapi/core": "^1.5.0",
+        "@emnapi/runtime": "^1.5.0",
+        "@emnapi/wasi-threads": "^1.1.0",
+        "@napi-rs/wasm-runtime": "^1.0.5",
+        "@tybys/wasm-util": "^0.10.1",
+        "tslib": "^2.4.0"
+      },
+      "engines": {
+        "node": ">=14.0.0"
+      }
+    },
+    "node_modules/@tailwindcss/oxide-win32-arm64-msvc": {
+      "version": "4.1.14",
+      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-win32-arm64-msvc/-/oxide-win32-arm64-msvc-4.1.14.tgz",
+      "integrity": "sha512-Az0RnnkcvRqsuoLH2Z4n3JfAef0wElgzHD5Aky/e+0tBUxUhIeIqFBTMNQvmMRSP15fWwmvjBxZ3Q8RhsDnxAA==",
+      "cpu": [
+        "arm64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "win32"
+      ],
+      "engines": {
+        "node": ">= 10"
+      }
+    },
+    "node_modules/@tailwindcss/oxide-win32-x64-msvc": {
+      "version": "4.1.14",
+      "resolved": "https://registry.npmjs.org/@tailwindcss/oxide-win32-x64-msvc/-/oxide-win32-x64-msvc-4.1.14.tgz",
+      "integrity": "sha512-ttblVGHgf68kEE4om1n/n44I0yGPkCPbLsqzjvybhpwa6mKKtgFfAzy6btc3HRmuW7nHe0OOrSeNP9sQmmH9XA==",
+      "cpu": [
+        "x64"
+      ],
+      "dev": true,
+      "license": "MIT",
+      "optional": true,
+      "os": [
+        "win32"
+      ],
+      "engines": {
+        "node": ">= 10"
+      }
+    },
+    "node_modules/@tailwindcss/postcss": {
+      "version": "4.1.14",
+      "resolved": "https://registry.npmjs.org/@tailwindcss/postcss/-/postcss-4.1.14.tgz",
+      "integrity": "sha512-BdMjIxy7HUNThK87C7BC8I1rE8BVUsfNQSI5siQ4JK3iIa3w0XyVvVL9SXLWO//CtYTcp1v7zci0fYwJOjB+Zg==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@alloc/quick-lru": "^5.2.0",
+        "@tailwindcss/node": "4.1.14",
+        "@tailwindcss/oxide": "4.1.14",
+        "postcss": "^8.4.41",
+        "tailwindcss": "4.1.14"
+      }
+    },
     "node_modules/@types/babel__core": {
       "version": "7.20.5",
       "resolved": "https://registry.npmjs.org/@types/babel__core/-/babel__core-7.20.5.tgz",
@@ -1649,6 +3074,44 @@ export default defineConfig([
       "dev": true,
       "license": "Python-2.0"
     },
+    "node_modules/autoprefixer": {
+      "version": "10.4.21",
+      "resolved": "https://registry.npmjs.org/autoprefixer/-/autoprefixer-10.4.21.tgz",
+      "integrity": "sha512-O+A6LWV5LDHSJD3LjHYoNi4VLsj/Whi7k6zG12xTYaU4cQ8oxQGckXNX8cRHK5yOZ/ppVHe0ZBXGzSV9jXdVbQ==",
+      "dev": true,
+      "funding": [
+        {
+          "type": "opencollective",
+          "url": "https://opencollective.com/postcss/"
+        },
+        {
+          "type": "tidelift",
+          "url": "https://tidelift.com/funding/github/npm/autoprefixer"
+        },
+        {
+          "type": "github",
+          "url": "https://github.com/sponsors/ai"
+        }
+      ],
+      "license": "MIT",
+      "dependencies": {
+        "browserslist": "^4.24.4",
+        "caniuse-lite": "^1.0.30001702",
+        "fraction.js": "^4.3.7",
+        "normalize-range": "^0.1.2",
+        "picocolors": "^1.1.1",
+        "postcss-value-parser": "^4.2.0"
+      },
+      "bin": {
+        "autoprefixer": "bin/autoprefixer"
+      },
+      "engines": {
+        "node": "^10 || ^12 || >=14"
+      },
+      "peerDependencies": {
+        "postcss": "^8.1.0"
+      }
+    },
     "node_modules/balanced-match": {
       "version": "1.0.2",
       "resolved": "https://registry.npmjs.org/balanced-match/-/balanced-match-1.0.2.tgz",
@@ -1759,6 +3222,16 @@ export default defineConfig([
         "url": "https://github.com/chalk/chalk?sponsor=1"
       }
     },
+    "node_modules/chownr": {
+      "version": "3.0.0",
+      "resolved": "https://registry.npmjs.org/chownr/-/chownr-3.0.0.tgz",
+      "integrity": "sha512-+IxzY9BZOQd/XuYPRmrvEVjF/nqj5kgT4kEq7VofrDoM1MxoRjEWkrCC3EtLi59TVawxTAn+orJwFQcrqEN1+g==",
+      "dev": true,
+      "license": "BlueOak-1.0.0",
+      "engines": {
+        "node": ">=18"
+      }
+    },
     "node_modules/color-convert": {
       "version": "2.0.1",
       "resolved": "https://registry.npmjs.org/color-convert/-/color-convert-2.0.1.tgz",
@@ -1849,12 +3322,36 @@ export default defineConfig([
       "dev": true,
       "license": "MIT"
     },
+    "node_modules/detect-libc": {
+      "version": "2.1.2",
+      "resolved": "https://registry.npmjs.org/detect-libc/-/detect-libc-2.1.2.tgz",
+      "integrity": "sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==",
+      "dev": true,
+      "license": "Apache-2.0",
+      "engines": {
+        "node": ">=8"
+      }
+    },
     "node_modules/electron-to-chromium": {
       "version": "1.5.224",
       "resolved": "https://registry.npmjs.org/electron-to-chromium/-/electron-to-chromium-1.5.224.tgz",
       "integrity": "sha512-kWAoUu/bwzvnhpdZSIc6KUyvkI1rbRXMT0Eq8pKReyOyaPZcctMli+EgvcN1PAvwVc7Tdo4Fxi2PsLNDU05mdg==",
       "dev": true,
       "license": "ISC"
+    },
+    "node_modules/enhanced-resolve": {
+      "version": "5.18.3",
+      "resolved": "https://registry.npmjs.org/enhanced-resolve/-/enhanced-resolve-5.18.3.tgz",
+      "integrity": "sha512-d4lC8xfavMeBjzGr2vECC3fsGXziXZQyJxD868h2M/mBI3PwAuODxAkLkq5HYuvrPYcUtiLzsTo8U3PgX3Ocww==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "graceful-fs": "^4.2.4",
+        "tapable": "^2.2.0"
+      },
+      "engines": {
+        "node": ">=10.13.0"
+      }
     },
     "node_modules/esbuild": {
       "version": "0.25.10",
@@ -2189,6 +3686,20 @@ export default defineConfig([
       "dev": true,
       "license": "ISC"
     },
+    "node_modules/fraction.js": {
+      "version": "4.3.7",
+      "resolved": "https://registry.npmjs.org/fraction.js/-/fraction.js-4.3.7.tgz",
+      "integrity": "sha512-ZsDfxO51wGAXREY55a7la9LScWpwv9RxIrYABrlvOFBlH/ShPnrtsXeuUIfXKKOVicNxQ+o8JTbJvjS4M89yew==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": "*"
+      },
+      "funding": {
+        "type": "patreon",
+        "url": "https://github.com/sponsors/rawify"
+      }
+    },
     "node_modules/fsevents": {
       "version": "2.3.3",
       "resolved": "https://registry.npmjs.org/fsevents/-/fsevents-2.3.3.tgz",
@@ -2239,6 +3750,13 @@ export default defineConfig([
       "funding": {
         "url": "https://github.com/sponsors/sindresorhus"
       }
+    },
+    "node_modules/graceful-fs": {
+      "version": "4.2.11",
+      "resolved": "https://registry.npmjs.org/graceful-fs/-/graceful-fs-4.2.11.tgz",
+      "integrity": "sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==",
+      "dev": true,
+      "license": "ISC"
     },
     "node_modules/has-flag": {
       "version": "4.0.0",
@@ -2316,6 +3834,16 @@ export default defineConfig([
       "integrity": "sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==",
       "dev": true,
       "license": "ISC"
+    },
+    "node_modules/jiti": {
+      "version": "2.6.1",
+      "resolved": "https://registry.npmjs.org/jiti/-/jiti-2.6.1.tgz",
+      "integrity": "sha512-ekilCSN1jwRvIbgeg/57YFh8qQDNbwDb9xT/qu2DAHbFFZUicIl4ygVaAvzveMhMVr3LnpSKTNnwt8PoOfmKhQ==",
+      "dev": true,
+      "license": "MIT",
+      "bin": {
+        "jiti": "lib/jiti-cli.mjs"
+      }
     },
     "node_modules/js-tokens": {
       "version": "4.0.0",
@@ -2408,6 +3936,245 @@ export default defineConfig([
         "node": ">= 0.8.0"
       }
     },
+    "node_modules/lightningcss": {
+      "version": "1.30.1",
+      "resolved": "https://registry.npmjs.org/lightningcss/-/lightningcss-1.30.1.tgz",
+      "integrity": "sha512-xi6IyHML+c9+Q3W0S4fCQJOym42pyurFiJUHEcEyHS0CeKzia4yZDEsLlqOFykxOdHpNy0NmvVO31vcSqAxJCg==",
+      "dev": true,
+      "license": "MPL-2.0",
+      "dependencies": {
+        "detect-libc": "^2.0.3"
+      },
+      "engines": {
+        "node": ">= 12.0.0"
+      },
+      "funding": {
+        "type": "opencollective",
+        "url": "https://opencollective.com/parcel"
+      },
+      "optionalDependencies": {
+        "lightningcss-darwin-arm64": "1.30.1",
+        "lightningcss-darwin-x64": "1.30.1",
+        "lightningcss-freebsd-x64": "1.30.1",
+        "lightningcss-linux-arm-gnueabihf": "1.30.1",
+        "lightningcss-linux-arm64-gnu": "1.30.1",
+        "lightningcss-linux-arm64-musl": "1.30.1",
+        "lightningcss-linux-x64-gnu": "1.30.1",
+        "lightningcss-linux-x64-musl": "1.30.1",
+        "lightningcss-win32-arm64-msvc": "1.30.1",
+        "lightningcss-win32-x64-msvc": "1.30.1"
+      }
+    },
+    "node_modules/lightningcss-darwin-arm64": {
+      "version": "1.30.1",
+      "resolved": "https://registry.npmjs.org/lightningcss-darwin-arm64/-/lightningcss-darwin-arm64-1.30.1.tgz",
+      "integrity": "sha512-c8JK7hyE65X1MHMN+Viq9n11RRC7hgin3HhYKhrMyaXflk5GVplZ60IxyoVtzILeKr+xAJwg6zK6sjTBJ0FKYQ==",
+      "cpu": [
+        "arm64"
+      ],
+      "dev": true,
+      "license": "MPL-2.0",
+      "optional": true,
+      "os": [
+        "darwin"
+      ],
+      "engines": {
+        "node": ">= 12.0.0"
+      },
+      "funding": {
+        "type": "opencollective",
+        "url": "https://opencollective.com/parcel"
+      }
+    },
+    "node_modules/lightningcss-darwin-x64": {
+      "version": "1.30.1",
+      "resolved": "https://registry.npmjs.org/lightningcss-darwin-x64/-/lightningcss-darwin-x64-1.30.1.tgz",
+      "integrity": "sha512-k1EvjakfumAQoTfcXUcHQZhSpLlkAuEkdMBsI/ivWw9hL+7FtilQc0Cy3hrx0AAQrVtQAbMI7YjCgYgvn37PzA==",
+      "cpu": [
+        "x64"
+      ],
+      "dev": true,
+      "license": "MPL-2.0",
+      "optional": true,
+      "os": [
+        "darwin"
+      ],
+      "engines": {
+        "node": ">= 12.0.0"
+      },
+      "funding": {
+        "type": "opencollective",
+        "url": "https://opencollective.com/parcel"
+      }
+    },
+    "node_modules/lightningcss-freebsd-x64": {
+      "version": "1.30.1",
+      "resolved": "https://registry.npmjs.org/lightningcss-freebsd-x64/-/lightningcss-freebsd-x64-1.30.1.tgz",
+      "integrity": "sha512-kmW6UGCGg2PcyUE59K5r0kWfKPAVy4SltVeut+umLCFoJ53RdCUWxcRDzO1eTaxf/7Q2H7LTquFHPL5R+Gjyig==",
+      "cpu": [
+        "x64"
+      ],
+      "dev": true,
+      "license": "MPL-2.0",
+      "optional": true,
+      "os": [
+        "freebsd"
+      ],
+      "engines": {
+        "node": ">= 12.0.0"
+      },
+      "funding": {
+        "type": "opencollective",
+        "url": "https://opencollective.com/parcel"
+      }
+    },
+    "node_modules/lightningcss-linux-arm-gnueabihf": {
+      "version": "1.30.1",
+      "resolved": "https://registry.npmjs.org/lightningcss-linux-arm-gnueabihf/-/lightningcss-linux-arm-gnueabihf-1.30.1.tgz",
+      "integrity": "sha512-MjxUShl1v8pit+6D/zSPq9S9dQ2NPFSQwGvxBCYaBYLPlCWuPh9/t1MRS8iUaR8i+a6w7aps+B4N0S1TYP/R+Q==",
+      "cpu": [
+        "arm"
+      ],
+      "dev": true,
+      "license": "MPL-2.0",
+      "optional": true,
+      "os": [
+        "linux"
+      ],
+      "engines": {
+        "node": ">= 12.0.0"
+      },
+      "funding": {
+        "type": "opencollective",
+        "url": "https://opencollective.com/parcel"
+      }
+    },
+    "node_modules/lightningcss-linux-arm64-gnu": {
+      "version": "1.30.1",
+      "resolved": "https://registry.npmjs.org/lightningcss-linux-arm64-gnu/-/lightningcss-linux-arm64-gnu-1.30.1.tgz",
+      "integrity": "sha512-gB72maP8rmrKsnKYy8XUuXi/4OctJiuQjcuqWNlJQ6jZiWqtPvqFziskH3hnajfvKB27ynbVCucKSm2rkQp4Bw==",
+      "cpu": [
+        "arm64"
+      ],
+      "dev": true,
+      "license": "MPL-2.0",
+      "optional": true,
+      "os": [
+        "linux"
+      ],
+      "engines": {
+        "node": ">= 12.0.0"
+      },
+      "funding": {
+        "type": "opencollective",
+        "url": "https://opencollective.com/parcel"
+      }
+    },
+    "node_modules/lightningcss-linux-arm64-musl": {
+      "version": "1.30.1",
+      "resolved": "https://registry.npmjs.org/lightningcss-linux-arm64-musl/-/lightningcss-linux-arm64-musl-1.30.1.tgz",
+      "integrity": "sha512-jmUQVx4331m6LIX+0wUhBbmMX7TCfjF5FoOH6SD1CttzuYlGNVpA7QnrmLxrsub43ClTINfGSYyHe2HWeLl5CQ==",
+      "cpu": [
+        "arm64"
+      ],
+      "dev": true,
+      "license": "MPL-2.0",
+      "optional": true,
+      "os": [
+        "linux"
+      ],
+      "engines": {
+        "node": ">= 12.0.0"
+      },
+      "funding": {
+        "type": "opencollective",
+        "url": "https://opencollective.com/parcel"
+      }
+    },
+    "node_modules/lightningcss-linux-x64-gnu": {
+      "version": "1.30.1",
+      "resolved": "https://registry.npmjs.org/lightningcss-linux-x64-gnu/-/lightningcss-linux-x64-gnu-1.30.1.tgz",
+      "integrity": "sha512-piWx3z4wN8J8z3+O5kO74+yr6ze/dKmPnI7vLqfSqI8bccaTGY5xiSGVIJBDd5K5BHlvVLpUB3S2YCfelyJ1bw==",
+      "cpu": [
+        "x64"
+      ],
+      "dev": true,
+      "license": "MPL-2.0",
+      "optional": true,
+      "os": [
+        "linux"
+      ],
+      "engines": {
+        "node": ">= 12.0.0"
+      },
+      "funding": {
+        "type": "opencollective",
+        "url": "https://opencollective.com/parcel"
+      }
+    },
+    "node_modules/lightningcss-linux-x64-musl": {
+      "version": "1.30.1",
+      "resolved": "https://registry.npmjs.org/lightningcss-linux-x64-musl/-/lightningcss-linux-x64-musl-1.30.1.tgz",
+      "integrity": "sha512-rRomAK7eIkL+tHY0YPxbc5Dra2gXlI63HL+v1Pdi1a3sC+tJTcFrHX+E86sulgAXeI7rSzDYhPSeHHjqFhqfeQ==",
+      "cpu": [
+        "x64"
+      ],
+      "dev": true,
+      "license": "MPL-2.0",
+      "optional": true,
+      "os": [
+        "linux"
+      ],
+      "engines": {
+        "node": ">= 12.0.0"
+      },
+      "funding": {
+        "type": "opencollective",
+        "url": "https://opencollective.com/parcel"
+      }
+    },
+    "node_modules/lightningcss-win32-arm64-msvc": {
+      "version": "1.30.1",
+      "resolved": "https://registry.npmjs.org/lightningcss-win32-arm64-msvc/-/lightningcss-win32-arm64-msvc-1.30.1.tgz",
+      "integrity": "sha512-mSL4rqPi4iXq5YVqzSsJgMVFENoa4nGTT/GjO2c0Yl9OuQfPsIfncvLrEW6RbbB24WtZ3xP/2CCmI3tNkNV4oA==",
+      "cpu": [
+        "arm64"
+      ],
+      "dev": true,
+      "license": "MPL-2.0",
+      "optional": true,
+      "os": [
+        "win32"
+      ],
+      "engines": {
+        "node": ">= 12.0.0"
+      },
+      "funding": {
+        "type": "opencollective",
+        "url": "https://opencollective.com/parcel"
+      }
+    },
+    "node_modules/lightningcss-win32-x64-msvc": {
+      "version": "1.30.1",
+      "resolved": "https://registry.npmjs.org/lightningcss-win32-x64-msvc/-/lightningcss-win32-x64-msvc-1.30.1.tgz",
+      "integrity": "sha512-PVqXh48wh4T53F/1CCu8PIPCxLzWyCnn/9T5W1Jpmdy5h9Cwd+0YQS6/LwhHXSafuc61/xg9Lv5OrCby6a++jg==",
+      "cpu": [
+        "x64"
+      ],
+      "dev": true,
+      "license": "MPL-2.0",
+      "optional": true,
+      "os": [
+        "win32"
+      ],
+      "engines": {
+        "node": ">= 12.0.0"
+      },
+      "funding": {
+        "type": "opencollective",
+        "url": "https://opencollective.com/parcel"
+      }
+    },
     "node_modules/locate-path": {
       "version": "6.0.0",
       "resolved": "https://registry.npmjs.org/locate-path/-/locate-path-6.0.0.tgz",
@@ -2441,6 +4208,16 @@ export default defineConfig([
         "yallist": "^3.0.2"
       }
     },
+    "node_modules/magic-string": {
+      "version": "0.30.19",
+      "resolved": "https://registry.npmjs.org/magic-string/-/magic-string-0.30.19.tgz",
+      "integrity": "sha512-2N21sPY9Ws53PZvsEpVtNuSW+ScYbQdp4b9qUaL+9QkHUrGFKo56Lg9Emg5s9V/qrtNBmiR01sYhUOwu3H+VOw==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@jridgewell/sourcemap-codec": "^1.5.5"
+      }
+    },
     "node_modules/minimatch": {
       "version": "3.1.2",
       "resolved": "https://registry.npmjs.org/minimatch/-/minimatch-3.1.2.tgz",
@@ -2452,6 +4229,29 @@ export default defineConfig([
       },
       "engines": {
         "node": "*"
+      }
+    },
+    "node_modules/minipass": {
+      "version": "7.1.2",
+      "resolved": "https://registry.npmjs.org/minipass/-/minipass-7.1.2.tgz",
+      "integrity": "sha512-qOOzS1cBTWYF4BH8fVePDBOO9iptMnGUEZwNc/cMWnTV2nVLZ7VoNWEPHkYczZA0pdoA7dl6e7FL659nX9S2aw==",
+      "dev": true,
+      "license": "ISC",
+      "engines": {
+        "node": ">=16 || 14 >=14.17"
+      }
+    },
+    "node_modules/minizlib": {
+      "version": "3.1.0",
+      "resolved": "https://registry.npmjs.org/minizlib/-/minizlib-3.1.0.tgz",
+      "integrity": "sha512-KZxYo1BUkWD2TVFLr0MQoM8vUUigWD3LlD83a/75BqC+4qE0Hb1Vo5v1FgcfaNXvfXzr+5EhQ6ing/CaBijTlw==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "minipass": "^7.1.2"
+      },
+      "engines": {
+        "node": ">= 18"
       }
     },
     "node_modules/ms": {
@@ -2493,6 +4293,16 @@ export default defineConfig([
       "integrity": "sha512-5b0pgg78U3hwXkCM8Z9b2FJdPZlr9Psr9V2gQPESdGHqbntyFJKFW4r5TeWGFzafGY3hzs1JC62VEQMbl1JFkw==",
       "dev": true,
       "license": "MIT"
+    },
+    "node_modules/normalize-range": {
+      "version": "0.1.2",
+      "resolved": "https://registry.npmjs.org/normalize-range/-/normalize-range-0.1.2.tgz",
+      "integrity": "sha512-bdok/XvKII3nUpklnV6P2hxtMNrCboOjAcyBuQnWEhO665FwrSNRxU+AqpsyvO6LgGYPspN+lu5CLtw4jPRKNA==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=0.10.0"
+      }
     },
     "node_modules/optionator": {
       "version": "0.9.4",
@@ -2625,6 +4435,13 @@ export default defineConfig([
       "engines": {
         "node": "^10 || ^12 || >=14"
       }
+    },
+    "node_modules/postcss-value-parser": {
+      "version": "4.2.0",
+      "resolved": "https://registry.npmjs.org/postcss-value-parser/-/postcss-value-parser-4.2.0.tgz",
+      "integrity": "sha512-1NNCs6uurfkVbeXG4S8JFT9t19m45ICnif8zWLd5oPSZ50QnwMfK+H3jv408d4jw/7Bttv5axS5IiHoLaVNHeQ==",
+      "dev": true,
+      "license": "MIT"
     },
     "node_modules/prelude-ls": {
       "version": "1.2.1",
@@ -2848,6 +4665,54 @@ export default defineConfig([
         "node": ">=8"
       }
     },
+    "node_modules/tailwindcss": {
+      "version": "4.1.14",
+      "resolved": "https://registry.npmjs.org/tailwindcss/-/tailwindcss-4.1.14.tgz",
+      "integrity": "sha512-b7pCxjGO98LnxVkKjaZSDeNuljC4ueKUddjENJOADtubtdo8llTaJy7HwBMeLNSSo2N5QIAgklslK1+Ir8r6CA==",
+      "dev": true,
+      "license": "MIT"
+    },
+    "node_modules/tapable": {
+      "version": "2.3.0",
+      "resolved": "https://registry.npmjs.org/tapable/-/tapable-2.3.0.tgz",
+      "integrity": "sha512-g9ljZiwki/LfxmQADO3dEY1CbpmXT5Hm2fJ+QaGKwSXUylMybePR7/67YW7jOrrvjEgL1Fmz5kzyAjWVWLlucg==",
+      "dev": true,
+      "license": "MIT",
+      "engines": {
+        "node": ">=6"
+      },
+      "funding": {
+        "type": "opencollective",
+        "url": "https://opencollective.com/webpack"
+      }
+    },
+    "node_modules/tar": {
+      "version": "7.5.1",
+      "resolved": "https://registry.npmjs.org/tar/-/tar-7.5.1.tgz",
+      "integrity": "sha512-nlGpxf+hv0v7GkWBK2V9spgactGOp0qvfWRxUMjqHyzrt3SgwE48DIv/FhqPHJYLHpgW1opq3nERbz5Anq7n1g==",
+      "dev": true,
+      "license": "ISC",
+      "dependencies": {
+        "@isaacs/fs-minipass": "^4.0.0",
+        "chownr": "^3.0.0",
+        "minipass": "^7.1.2",
+        "minizlib": "^3.1.0",
+        "yallist": "^5.0.0"
+      },
+      "engines": {
+        "node": ">=18"
+      }
+    },
+    "node_modules/tar/node_modules/yallist": {
+      "version": "5.0.0",
+      "resolved": "https://registry.npmjs.org/yallist/-/yallist-5.0.0.tgz",
+      "integrity": "sha512-YgvUTfwqyc7UXVMrB+SImsVYSmTS8X/tSrtdNZMImM+n7+QTriRXyXim0mBrTXNeqzVF0KWGgHPeiyViFFrNDw==",
+      "dev": true,
+      "license": "BlueOak-1.0.0",
+      "engines": {
+        "node": ">=18"
+      }
+    },
     "node_modules/tinyglobby": {
       "version": "0.2.15",
       "resolved": "https://registry.npmjs.org/tinyglobby/-/tinyglobby-0.2.15.tgz",
@@ -3042,6 +4907,8 @@ export default defineConfig([
     }
   }
 }
+
+===== C:\Users\roman\Desktop\React Fetch\React Fetch\client\package.json =====
 {
   "name": "client",
   "private": true,
@@ -3060,16 +4927,43 @@ export default defineConfig([
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
+    "@tailwindcss/aspect-ratio": "^0.4.2",
+    "@tailwindcss/postcss": "^4.1.14",
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",
     "@vitejs/plugin-react": "^5.0.3",
+    "autoprefixer": "^10.4.21",
     "eslint": "^9.36.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.4.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.14",
     "vite": "^7.1.7"
   }
 }
+
+===== C:\Users\roman\Desktop\React Fetch\React Fetch\client\postcss.config.js =====
+export default {
+  plugins: {
+    "@tailwindcss/postcss": {},
+    autoprefixer: {},
+  },
+}
+
+===== C:\Users\roman\Desktop\React Fetch\React Fetch\client\tailwind.config.js =====
+// tailwind.config.js  (ESM o CJS, el que uses)
+module.exports = {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,jsx,ts,tsx}",   // incluye pages, components, context, etc.
+    "./views/**/*.{js,jsx,ts,tsx}", // si usas /views
+  ],
+  theme: { extend: {} },
+  plugins: [require("@tailwindcss/forms"), require("@tailwindcss/aspect-ratio")],
+};
+
+===== C:\Users\roman\Desktop\React Fetch\React Fetch\client\vite.config.js =====
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
@@ -3077,3 +4971,4 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
 })
+
