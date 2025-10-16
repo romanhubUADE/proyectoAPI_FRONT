@@ -78,7 +78,7 @@ export default function CartPage() {
                             <div className="mt-1 flex items-center gap-3">
                               <button
                                 onClick={() => setQty(i.id, i.qty - 1)}
-                                className="h-8 w-8 rounded-full ring-1 ring-primary/30 hover:bg-primary/20"
+                                className="flex items-center justify-center h-8 w-8 rounded-full ring-1 ring-primary/30 hover:bg-primary/20"
                                 aria-label="disminuir"
                               >
                                 −
@@ -88,11 +88,11 @@ export default function CartPage() {
                                 onChange={(e) =>
                                   setQty(i.id, Number(e.target.value))
                                 }
-                                className="w-12 rounded-md border border-primary/30 bg-transparent p-1 text-center"
+                                className="w-12 rounded-md border border-primary/20 bg-transparent p-1 text-center"
                               />
                               <button
                                 onClick={() => setQty(i.id, i.qty + 1)}
-                                className="h-8 w-8 rounded-full ring-1 ring-primary/30 hover:bg-primary/20"
+                                className="flex items-center justify-center h-8 w-8 rounded-full ring-1 ring-primary/30 hover:bg-primary/20"
                                 aria-label="aumentar"
                               >
                                 +
