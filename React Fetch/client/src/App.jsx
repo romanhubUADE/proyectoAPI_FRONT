@@ -22,7 +22,7 @@ export default function App() {
   return (
     <>
       <NavBar />
-      <div className="pt-16">
+      <div className="pt-14">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />

@@ -4,10 +4,10 @@ export default function Home() {
   return (
     <main className="flex-1">
       {/* HERO */}
-      <section className="py-12 md:py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section className="py-16 md:py-30">
+        <div className="mx-auto w-8xl px-4 sm:px-6 lg:px-8">
           <div
-            className="relative flex min-h-[480px] items-center justify-center overflow-hidden rounded-xl bg-cover bg-center p-8 text-center"
+            className="relative flex min-h-[600px] items-center justify-center overflow-hidden rounded-xl bg-cover bg-center p-8 text-center"
             style={{
               backgroundImage:
                 'linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.5)), url("https://lh3.googleusercontent.com/aida-public/AB6AXuBSfetmgcEEAPqxn90x0d4neJA5JipPFfgpYlgL4mU2dKmIghVxndjkaq_klTgQVjHsWal3yO9o1IKNbR_WlUwcOkVT5GxkLOArd0l_sbF4r81vrV8F4bLuy1emgFGZrWH8clsIvvJRXez3BSAE2C_YKuDPPTzCmDfFGBObaYgrttUmJjMSzuXO_0UcR7hSc9kbXRKJFZ2o8hfPZgYF82bWBjAj8WuE-KZY1mSHVbSfcwiAZBIOJMsOC3b_zDSfJAlIg1P17Bujblc")',
@@ -34,10 +34,10 @@ export default function Home() {
       </section>
    {/* FEATURED */}
 <section className="py-12 md:py-16">
-  <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+  <div className="mx-auto max-w-8xl px-4 sm:px-6 lg:px-8">
     <h2 className="text-2xl font-bold text-stone-900 dark:text-white">Featured Guitars</h2>
 
-    <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div className="mt-6 grid grid-cols-3 gap-6 md:grid-cols-2 lg:grid-cols-3">
       {[
         {
           title: "The 'Prairie Song' Acoustic",
@@ -77,16 +77,16 @@ export default function Home() {
 
 {/* CATEGORIES */}
 <section className="py-12 md:py-16">
-  <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+  <div className="mx-auto max-w-8xl px-4 sm:px-6 lg:px-8">
     <h2 className="text-2xl font-bold text-stone-900 dark:text-white">Shop by Category</h2>
 
-    <div className="mt-6 grid grid-cols-2 gap-6 md:grid-cols-4">
+    <div className="mt-6 grid grid-cols-4 gap-6 md:grid-cols-4">
       {[
         {
-          title: "Acoustic Guitars",
-          text: "Explore our range of acoustic guitars.",
+          title: "Guitars",
+          text: "Explore our range of guitars.",
           img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDJrIylck-_TSgSDirpXHOfdt1uv835vHVw3odnmBaNB_lcYNckSLAlmFoK_eXrrsjG8C0c2irKLty2K5Nhfg_EyiYEy8EMTSo0Wy092fXNr2heG3F40q1hzqALMGnIZ6SdImImWd5aa5-yfmTvUgesyIJqiL4WBL1rvln95_YCA_M1eG4Mh-s55WU_B3XSiJuE8iIyxJH2ALWDJvzCdubVW7KA3wdaSOvU68T_B2_eBJUKqCnfGvujSmvero-vhOmSsvIRRpeiKZM",
-          to: "/catalog?cat=acoustic",
+          to: "/catalog?",
         },
         {
           title: "Electric Guitars",
@@ -99,6 +99,12 @@ export default function Home() {
           text: "Find the perfect bass guitar for your style.",
           img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDqnpHQE5yhMjM5ZOSN1dQUs-aGIgzx4iMtTyk3J1pcIYwH8by3PyAx02riMLYf7OIn-KuP43RtnL_qNkIRzQS2Sv852HnAAlNFnUmZhF39yzc30W80GKjBhK2hhJl_PLvX0nsOgiWgCJYFRyUYwSywt0LUEPsIi9VGG_cDCtmyYejC72HEqFOmYAym8Iyv4If-5LaVNsF0ZwaVZ_56qtqe1ZN3fnrtW38IJbWFRDQ9HlnM4AeoGFLYZA-_IWU9mhQoLoIBaBGMWvA",
           to: "/catalog?cat=bass",
+        },
+        {
+          title: "Acoustic Guitars",
+          text: "Explore our range of acoustic guitars.",
+          img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDJrIylck-_TSgSDirpXHOfdt1uv835vHVw3odnmBaNB_lcYNckSLAlmFoK_eXrrsjG8C0c2irKLty2K5Nhfg_EyiYEy8EMTSo0Wy092fXNr2heG3F40q1hzqALMGnIZ6SdImImWd5aa5-yfmTvUgesyIJqiL4WBL1rvln95_YCA_M1eG4Mh-s55WU_B3XSiJuE8iIyxJH2ALWDJvzCdubVW7KA3wdaSOvU68T_B2_eBJUKqCnfGvujSmvero-vhOmSsvIRRpeiKZM",
+          to: "/catalog?cat=acoustic",
         },
        
       ].map((c) => (

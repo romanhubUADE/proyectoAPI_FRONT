@@ -28,14 +28,14 @@ export default function Catalog() {
   }, [state?.products, wanted]);
 
   return (
-    <main className="mx-auto max-w-[1400px] px-6 py-10">
+    <main className="mx-auto max-w-8x1 px-6 py-10">
       <div className="grid gap-8 grid-cols-[280px,1fr]">
         <Filters />
         <section>
           <h1 className="text-4xl font-bold text-stone-100 mb-8">{title}</h1>
 
           {/* Ajuste de la grilla */}
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             {products.map((p) => (
               <ProductCard key={p.id} p={p} />
             ))}

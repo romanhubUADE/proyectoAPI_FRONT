@@ -4,12 +4,12 @@ import { Link } from "react-router-dom";
 export default function Login() {
   return (
     <div className="flex min-h-[70vh] items-center justify-center px-4 py-12 sm:py-20">
-      <div className="w-full max-w-md">
-        <div className="rounded-xl bg-white/90 p-8 shadow-md dark:bg-stone-900/90">
+      <div className="w-full max-w-xl">
+        <div className="rounded-xl bg-[#14100b] p-6">
           <h2 className="mb-2 text-2xl font-semibold text-stone-900 dark:text-white">Bienvenido de nuevo</h2>
           <p className="mb-6 text-sm text-stone-600 dark:text-stone-300">Inicia sesión con tu cuenta para continuar</p>
 
-          <form className="space-y-4">
+          <form className="space-y-6">
             <label className="block">
               <span className="text-sm text-stone-700 dark:text-stone-200">E-mail</span>
               <input

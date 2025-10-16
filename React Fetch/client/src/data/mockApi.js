@@ -134,6 +134,28 @@ const seed = [
     scale: "34\"",
     finish: "Gloss",
   },
+  {
+    id: "b3",
+    name: "Music Man StingRay",
+    price: 1400,
+    stock: 2,
+    category: "bajo",
+    image:
+      "https://images.unsplash.com/photo-1483412033650-1015ddeb83d1?q=80&w=1200&auto=format&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1483412033650-1015ddeb83d1?q=80&w=1200&auto=format&fit=crop",
+    ],
+    gallery: [
+      "https://images.unsplash.com/photo-1508780709619-79562169bc64?q=80&w=800",
+      "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=800",
+    ],
+    short:
+      "Golpe moderno y potente. Electrónica activa y gran pegada.",
+    neck: "Maple",
+    fretboard: "Maple",
+    scale: "34\"",
+    finish: "Gloss",
+  },
 ];
 
 function initDB() {
