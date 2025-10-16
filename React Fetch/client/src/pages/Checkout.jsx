@@ -15,14 +15,17 @@ export default function Checkout() {
   };
 
   return (
-    <main className="mx-auto max-w-3xl p-4 sm:p-6 lg:p-8">
+  <div className="flex min-h-[80vh] items-center justify-center">
+    <main className="w-full max-w-3xl p-4 sm:p-6 lg:p-8">
       <h1 className="text-3xl font-bold">Información</h1>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-8">
         <section>
           <h2 className="text-xl font-semibold">Contacto</h2>
           <input
-            type="email" required placeholder="Email"
+            type="email"
+            required
+            placeholder="Email"
             value={form.email}
             onChange={e => setForm({ ...form, email: e.target.value })}
             className="mt-3 w-full rounded-lg border bg-transparent px-4 py-3"
@@ -49,13 +52,17 @@ export default function Checkout() {
 
           <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <input
-              required placeholder="Nombre"
-              value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
+              required
+              placeholder="Nombre"
+              value={form.name}
+              onChange={e => setForm({ ...form, name: e.target.value })}
               className="rounded-lg border bg-transparent px-4 py-3"
             />
             <input
-              required placeholder="Apellido"
-              value={form.last} onChange={e => setForm({ ...form, last: e.target.value })}
+              required
+              placeholder="Apellido"
+              value={form.last}
+              onChange={e => setForm({ ...form, last: e.target.value })}
               className="rounded-lg border bg-transparent px-4 py-3"
             />
           </div>
@@ -70,5 +77,6 @@ export default function Checkout() {
         </button>
       </form>
     </main>
-  );
+  </div>
+);
 }
