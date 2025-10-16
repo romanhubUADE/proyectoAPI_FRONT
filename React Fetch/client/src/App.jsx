@@ -12,6 +12,8 @@ import About from "./pages/About.jsx";
 import Footer from "./components/Footer.jsx";
 import Contact from "./pages/Contact.jsx";
 import FAQ from "./pages/FAQ.jsx";
+import Search from "./pages/Search.jsx";
+
 
 
 
@@ -34,6 +36,7 @@ export default function App() {
           <Route path="/contact" element={<Contact />} />
           <Route path="/faq" element={<FAQ />} />
           <Route path="*" element={<Navigate to="/" replace />} />
+           <Route path="/search" element={<Search />} />
         
         </Routes>
       </div>

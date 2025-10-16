@@ -4,12 +4,25 @@ const LS = {
   set:(k,v)=>localStorage.setItem(k,JSON.stringify(v)),
 }
 const seed = [
-  {id:'1', name:'Stratocaster SSS', price:800, stock:5, category:'eléctrica',
-   images:['https://images.unsplash.com/photo-1511379938547-c1f69419868d'], description:'Cuerpo aliso', discount:0},
-  {id:'2', name:'Les Paul Standard', price:1200, stock:3, category:'eléctrica',
-   images:['https://images.unsplash.com/photo-1516924962500-2b4b3b4f7f12'], description:'Tapa arce', discount:10},
-  {id:'3', name:'Acústica Cort', price:450, stock:0, category:'acústica',
-   images:['https://images.unsplash.com/photo-1513836279014-a89f7a76ae86'], description:'Spruce top', discount:0},
+  // ELÉCTRICAS
+  { id:'1', name:'Stratocaster SSS', price:800, stock:5, category:'eléctrica',
+    images:['https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=900&q=80'], description:'Cuerpo aliso', discount:0 },
+  { id:'2', name:'Les Paul Standard', price:1200, stock:3, category:'eléctrica',
+    images:['https://images.unsplash.com/photo-1516924962500-2b4b3b4f7f12?w=900&q=80'], description:'Tapa arce', discount:10 },
+
+  // ACÚSTICAS
+  { id:'3', name:'Acústica Cort', price:450, stock:8, category:'acústica',
+    images:['https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=900&q=80'], description:'Spruce top', discount:0 },
+
+  // BAJOS (nuevo)
+{
+  id: "b1", name: "Fender Jazz Bass",price: 1100,stock: 6,category: "bajo",images: ["https://images.unsplash.com/photo-1575936123452-b67c3203c357?w=900&q=80"],description: "Aliso, single-coil", discount: 0},
+{
+  id: "b2",name: "Music Man StingRay",price: 1500,stock: 4,category: "bajo",images: ["https://images.unsplash.com/photo-1571333246102-5d36f3c7a853?w=900&q=80"
+  ],
+  description: "Humbucker",
+  discount: 0
+}
 ]
 function initDB(){
   const db = LS.get('db', null) ?? { products: seed }

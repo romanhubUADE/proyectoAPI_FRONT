@@ -4,47 +4,39 @@ import Filters from "../components/Filters.jsx";
 import ProductCard from "../components/ProductCard.jsx";
 import { useShop } from "../context/ShopContext.jsx";
 
+const norm = (s = "") => s.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
+const CAT = { acoustic: "acústica", electric: "eléctrica", bass: "bajo", classical: "clásica" };
+
 export default function Catalog() {
-  const { state, priceWithDiscount } = useShop();
+  const { state } = useShop();
   const { search } = useLocation();
   const sp = useMemo(() => new URLSearchParams(search), [search]);
 
-  const cat = sp.get("cat") || "all";
-  const q = (sp.get("q") || "").toLowerCase();
-  const min = Number(sp.get("min") || 0);
-  const max = Number(sp.get("max") || Infinity);
+  const catSlug = sp.get("cat") || "all";
+  const wanted = catSlug !== "all" ? norm(CAT[catSlug] || catSlug) : "";
 
-  const title = useMemo(() => {
-    if (cat === "acoustic") return "Guitarras Acústicas";
-    if (cat === "electric") return "Guitarras Eléctricas";
-    if (cat === "bass") return "Bajos";
-    if (cat === "classical") return "Guitarras Clásicas";
-    return "Catálogo";
-  }, [cat]);
+  const title =
+    catSlug === "acoustic" ? "Guitarras Acústicas" :
+    catSlug === "electric" ? "Guitarras Eléctricas" :
+    catSlug === "bass" ? "Bajos" :
+    catSlug === "classical" ? "Guitarras Clásicas" : "Catálogo";
 
   const products = useMemo(() => {
-    return state.products.filter(p => {
-      const inCat = cat === "all" ? true : p.category?.toLowerCase().includes(cat);
-      const text = `${p.name} ${p.brand || ""} ${p.category || ""}`.toLowerCase();
-      const inSearch = q ? text.includes(q) : true;
-      const price = priceWithDiscount ? priceWithDiscount(p) : p.price;
-      const inRange = price >= min && price <= max;
-      return inCat && inSearch && inRange;
-    });
-  }, [state.products, cat, q, min, max, priceWithDiscount]);
+    const list = state?.products ?? [];
+    if (!wanted) return list;
+    return list.filter((p) => norm(p.category || "").includes(wanted));
+  }, [state?.products, wanted]);
 
   return (
-    <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[280px,1fr]">
+    <main className="mx-auto max-w-[1400px] px-6 py-10">
+      <div className="grid gap-8 grid-cols-[280px,1fr]">
         <Filters />
-
         <section>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-stone-900 dark:text-white">
-            {title}
-          </h1>
+          <h1 className="text-4xl font-bold text-stone-100 mb-8">{title}</h1>
 
-          <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {products.map(p => (
+          {/* Ajuste de la grilla */}
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {products.map((p) => (
               <ProductCard key={p.id} p={p} />
             ))}
           </div>
