@@ -146,6 +146,65 @@ return (
             </div>
           </div>
         </section>
+
+        {/* Reseñas de usuarios */}
+        <section className="md:col-span-12 mt-6">
+          <h3 className="text-lg font-bold mb-3">Customer Comments</h3>
+          <div className="space-y-4">
+            {/* Review 1 */}
+            <div className="rounded-lg border border-white/10 p-4 shadow-sm">
+              <div className="flex items-center justify-between mb-1">
+                <h4 className="font-semibold">María López</h4>
+                <div className="flex text-amber-500">
+                  {"★★★★★".split("").map((s, i) => (
+                    <span key={i}>{s}</span>
+                  ))}
+                </div>
+              </div>
+              <p className="text-sm opacity-90">
+                La guitarra tiene un sonido espectacular. La terminé usando en mis presentaciones en vivo
+                y su acabado tipo madera se ve increíble. Llegó antes de lo esperado. ¡Muy recomendada!
+              </p>
+              <p className="mt-1 text-xs opacity-60">Hace 2 semanas</p>
+            </div>
+
+            {/* Review 2 */}
+            <div className="rounded-lg border border-white/10 p-4 shadow-sm">
+              <div className="flex items-center justify-between mb-1">
+                <h4 className="font-semibold">Carlos Medina</h4>
+                <div className="flex text-amber-500">
+                  {"★★★★☆".split("").map((s, i) => (
+                    <span key={i}>{s}</span>
+                  ))}
+                </div>
+              </div>
+              <p className="text-sm opacity-90">
+                Muy buena relación calidad-precio. El estuche no era el que esperaba, pero la guitarra
+                suena excelente. Los detalles del mástil son precisos y cómodos para tocar.
+              </p>
+              <p className="mt-1 text-xs opacity-60">Hace 1 mes</p>
+            </div>
+
+            {/* Review 3 */}
+            <div className="rounded-lg border border-white/10 p-4 shadow-sm">
+              <div className="flex items-center justify-between mb-1">
+                <h4 className="font-semibold">Lucía Fernández</h4>
+                <div className="flex text-amber-500">
+                  {"★★★★★".split("").map((s, i) => (
+                    <span key={i}>{s}</span>
+                  ))}
+                </div>
+              </div>
+              <p className="text-sm opacity-90">
+                Me encantó el acabado brillante y el tono cálido. Perfecta para practicar y para grabar.
+                Sin duda compraría otra de esta marca.
+              </p>
+              <p className="mt-1 text-xs opacity-60">Hace 3 meses</p>
+            </div>
+          </div>
+        </section>
+
+
       </div>
     </div>
   </main>
