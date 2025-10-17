@@ -13,6 +13,8 @@ import Footer from "./components/Footer.jsx";
 import Contact from "./pages/Contact.jsx";
 import FAQ from "./pages/FAQ.jsx";
 import Search from "./pages/Search.jsx";
+import Payment from "./pages/Payment.jsx";
+import CheckoutFinal from "./pages/CheckoutFinal.jsx";
 
 
 
@@ -29,7 +31,9 @@ export default function App() {
           <Route path="/catalog" element={<Catalog />} />
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/cart" element={<CartPage />} />
+          <Route path="/payment" element={<Payment />} />   
           <Route path="/checkout" element={<Checkout />} />
+          <Route path="/checkout-final" element={<CheckoutFinal />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/account" element={<Account />} />

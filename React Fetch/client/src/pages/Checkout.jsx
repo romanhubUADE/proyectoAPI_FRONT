@@ -10,8 +10,13 @@ export default function Checkout() {
   const onSubmit = (e) => {
     e.preventDefault();
     if (!state.cart.length) return;
-    dispatch({ type: "CLEAR" });
-    nav("/");
+    // Guardar datos del formulario
+  sessionStorage.setItem("checkout.email", form.email);
+  sessionStorage.setItem("checkout.store", form.store);
+  sessionStorage.setItem("checkout.name", form.name);
+  sessionStorage.setItem("checkout.last", form.last);
+    
+  nav("/payment");
   };
 
   return (
