@@ -31,6 +31,22 @@ const seed = [
     nutWidth: "1.65\"",
     finish: "Gloss",
     discount: 0,
+
+    reviews: [
+    {
+      user: "María López",
+      rating: 5,
+      comment: "Sonido clásico y brillante. Muy cómoda para tocar.",
+      date: "Hace 2 semanas",
+    },
+    {
+      user: "Carlos Medina",
+      rating: 4,
+      comment: "Excelente guitarra, aunque las cuerdas venían un poco altas.",
+      date: "Hace 1 mes",
+    }
+  ]
+
   },
   {
     id: "2",
@@ -58,6 +74,21 @@ const seed = [
     nutWidth: "1.695\"",
     finish: "Gloss",
     discount: 10,
+
+    reviews: [
+    {
+      user: "Josefina Casas",
+      rating: 5,
+      comment: "Acorde a los estándares de mi profesión.",
+      date: "Hace 2 semanas",
+    },
+    {
+      user: "Claudio Godio",
+      rating: 4,
+      comment: "GOD.",
+      date: "Hace 1 mes",
+    }
+  ]
   },
 
   // Acústica (una con stock 0 para ejemplo)

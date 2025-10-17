@@ -121,88 +121,89 @@ return (
         </aside>
 
         {/* Reviews abajo, a todo el ancho */}
-        <section className="md:col-span-12">
-          <h2 className="mt-4 text-lg font-bold">Customer Reviews</h2>
-          <div className="mt-4 grid gap-4 rounded-lg border border-white/10 p-4 md:grid-cols-[160px,1fr]">
-            <div>
-              <div className="text-3xl font-bold">4.7</div>
-              <div className="text-sm opacity-70">based on 125 reviews</div>
-            </div>
-            <div className="space-y-2">
-              {[5, 4, 3, 2, 1].map((n, i) => (
-                <div key={n} className="flex items-center gap-3">
-                  <span className="w-6 text-sm">{n}★</span>
-                  <div className="h-2 flex-1 rounded bg-stone-700">
-                    <div
-                      className="h-2 rounded bg-amber-500"
-                      style={{ width: `${[75, 15, 6, 3, 1][i]}%` }}
-                    />
+        <section className="md:col-span-12 mt-8">
+          <h2 className="text-lg font-bold mb-3">Customer Reviews</h2>
+
+          {/* Si hay reviews */}
+          {p.reviews && p.reviews.length > 0 ? (
+            <>
+              {/* Calificación promedio + distribución */}
+              {(() => {
+                const total = p.reviews.length;
+                const avg =
+                  p.reviews.reduce((sum, r) => sum + r.rating, 0) / total;
+                const counts = [5, 4, 3, 2, 1].map(
+                  (n) => p.reviews.filter((r) => r.rating === n).length
+                );
+                return (
+                  <div className="mt-4 grid gap-4 rounded-lg border border-white/10 p-4 md:grid-cols-[160px,1fr]">
+                    {/* Promedio */}
+                    <div>
+                      <div className="text-3xl font-bold">
+                        {avg.toFixed(1)}
+                      </div>
+                      <div className="text-sm opacity-70">
+                        based on {total} review{total !== 1 ? "s" : ""}
+                      </div>
+                    </div>
+
+                    {/* Barras por estrellas */}
+                    <div className="space-y-2">
+                      {[5, 4, 3, 2, 1].map((n, i) => {
+                        const percent =
+                          total > 0 ? (counts[i] / total) * 100 : 0;
+                        return (
+                          <div
+                            key={n}
+                            className="flex items-center gap-3"
+                          >
+                            <span className="w-6 text-sm">{n}★</span>
+                            <div className="h-2 flex-1 rounded bg-stone-700">
+                              <div
+                                className="h-2 rounded bg-amber-500 transition-all"
+                                style={{ width: `${percent}%` }}
+                              />
+                            </div>
+                            <span className="w-10 text-right text-xs opacity-70">
+                              {percent.toFixed(0)}%
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <span className="w-10 text-right text-xs opacity-70">
-                    {[75, 15, 6, 3, 1][i]}%
-                  </span>
-                </div>
-              ))}
+                );
+              })()}
+
+              {/* Lista de comentarios */}
+              <div className="mt-6 space-y-4">
+                {p.reviews.map((r, i) => (
+                  <div
+                    key={i}
+                    className="rounded-lg border border-white/10 p-4 shadow-sm"
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <h4 className="font-semibold">{r.user}</h4>
+                      <div className="flex text-amber-500">
+                        {Array.from({ length: 5 }).map((_, idx) => (
+                          <span key={idx}>{idx < r.rating ? "★" : "☆"}</span>
+                        ))}
+                      </div>
+                    </div>
+                    <p className="text-sm opacity-90">{r.comment}</p>
+                    <p className="mt-1 text-xs opacity-60">{r.date}</p>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            // Si no hay reviews
+            <div className="rounded-lg border border-white/10 p-4 text-sm opacity-80">
+              Todavía no hay reseñas para este producto.
             </div>
-          </div>
+          )}
         </section>
 
-        {/* Reseñas de usuarios */}
-        <section className="md:col-span-12 mt-6">
-          <h3 className="text-lg font-bold mb-3">Customer Comments</h3>
-          <div className="space-y-4">
-            {/* Review 1 */}
-            <div className="rounded-lg border border-white/10 p-4 shadow-sm">
-              <div className="flex items-center justify-between mb-1">
-                <h4 className="font-semibold">María López</h4>
-                <div className="flex text-amber-500">
-                  {"★★★★★".split("").map((s, i) => (
-                    <span key={i}>{s}</span>
-                  ))}
-                </div>
-              </div>
-              <p className="text-sm opacity-90">
-                La guitarra tiene un sonido espectacular. La terminé usando en mis presentaciones en vivo
-                y su acabado tipo madera se ve increíble. Llegó antes de lo esperado. ¡Muy recomendada!
-              </p>
-              <p className="mt-1 text-xs opacity-60">Hace 2 semanas</p>
-            </div>
-
-            {/* Review 2 */}
-            <div className="rounded-lg border border-white/10 p-4 shadow-sm">
-              <div className="flex items-center justify-between mb-1">
-                <h4 className="font-semibold">Carlos Medina</h4>
-                <div className="flex text-amber-500">
-                  {"★★★★☆".split("").map((s, i) => (
-                    <span key={i}>{s}</span>
-                  ))}
-                </div>
-              </div>
-              <p className="text-sm opacity-90">
-                Muy buena relación calidad-precio. El estuche no era el que esperaba, pero la guitarra
-                suena excelente. Los detalles del mástil son precisos y cómodos para tocar.
-              </p>
-              <p className="mt-1 text-xs opacity-60">Hace 1 mes</p>
-            </div>
-
-            {/* Review 3 */}
-            <div className="rounded-lg border border-white/10 p-4 shadow-sm">
-              <div className="flex items-center justify-between mb-1">
-                <h4 className="font-semibold">Lucía Fernández</h4>
-                <div className="flex text-amber-500">
-                  {"★★★★★".split("").map((s, i) => (
-                    <span key={i}>{s}</span>
-                  ))}
-                </div>
-              </div>
-              <p className="text-sm opacity-90">
-                Me encantó el acabado brillante y el tono cálido. Perfecta para practicar y para grabar.
-                Sin duda compraría otra de esta marca.
-              </p>
-              <p className="mt-1 text-xs opacity-60">Hace 3 meses</p>
-            </div>
-          </div>
-        </section>
 
 
       </div>
