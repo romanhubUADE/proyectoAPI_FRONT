@@ -53,7 +53,22 @@ export default function CheckoutFinal() {
     sessionStorage.removeItem("checkout.email");
     sessionStorage.removeItem("checkout.name");
     sessionStorage.removeItem("checkout.last");
-    nav("/");
+    
+    // muestra mensaje de confirmación
+    Swal.fire({
+      title: '¡Compra realizada!',
+      text: 'Tu pedido fue confirmado con éxito.',
+      icon: 'success',
+      confirmButtonText: 'Aceptar',
+      confirmButtonColor: '#b86614', // tu color principal
+      background: '#2c1f13ff',         // fondo oscuro
+      color: '#f8f7f6',              // texto claro
+      backdrop: 'rgba(0,0,0,0.6)',   // oscurece el fondo detrás del modal
+
+    }).then(() => {
+      // redirige al menú principal una vez cerrado
+      nav("/");
+    });
   };
 
   return (
