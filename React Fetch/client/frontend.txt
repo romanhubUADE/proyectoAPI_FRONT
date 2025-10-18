@@ -129,7 +129,7 @@ export default function NavBar() {
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-stone-200 bg-background-light/80 backdrop-blur-sm dark:border-stone-800 dark:bg-background-dark/80">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-8xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
         <Link to="/" className="flex items-center gap-3">
           <svg className="h-6 w-6 text-primary" fill="currentColor" viewBox="0 0 24 24">
             <path d="M14.25 2.25a.75.75 0 0 0-.75.75v18a.75.75 0 0 0 .75.75h4.5a.75.75 0 0 0 .75-.75V3a.75.75 0 0 0-.75-.75h-4.5ZM15 3.75h3v16.5h-3V3.75Z" />
@@ -138,7 +138,7 @@ export default function NavBar() {
           <h1 className="text-xl font-bold text-stone-900 dark:text-white">String &amp; Soul</h1>
         </Link>
 
-        <nav className="flex gap-6">
+        <nav className="flex gap-10">
           <Link to="/catalog" className="text-sm font-medium text-white hover:text-primary">CatÃ¡logo</Link>
           <Link to="/catalog?cat=electric" className="text-sm font-medium text-white hover:text-primary">Electric</Link>
           <Link to="/catalog?cat=acoustic" className="text-sm font-medium text-white hover:text-primary">Acoustic</Link>
@@ -394,7 +394,6 @@ export default function About() {
 }
 
 ----- FILE: .\src\pages\Account.jsx -----
-// src/pages/Account.jsx
 import { Link } from "react-router-dom";
 
 export default function Account() {
@@ -403,10 +402,10 @@ export default function Account() {
 
   return (
     <div className="flex min-h-[70vh] items-start justify-center px-4 py-12 sm:py-20">
-      <div className="w-full max-w-4xl">
+      <div className="w-full max-w-6xl">
         <div className="grid gap-6 md:grid-cols-3">
           {/* Perfil */}
-          <div className="rounded-xl bg-white/90 p-6 shadow-md dark:bg-stone-900/90">
+          <div className="rounded-xl bg-[#14100b] p-6">
             <div className="flex flex-col items-center gap-4 text-center">
               <div className="flex h-28 w-28 items-center justify-center rounded-full bg-stone-100 text-2xl font-semibold text-stone-700 dark:bg-stone-700 dark:text-white">
                 {user.name.split(" ").map(n => n[0]).slice(0,2).join("")}
@@ -418,14 +417,21 @@ export default function Account() {
               </div>
 
               <div className="mt-4 flex w-full flex-col gap-2">
-                <Link to="/account/edit" className="w-full rounded-md border border-stone-200 px-3 py-2 text-center text-sm dark:border-stone-700">Editar perfil</Link>
-                <button className="w-full rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white">Cerrar sesiÃ³n</button>
+                <Link
+                  to="/account/edit"
+                  className="w-full rounded-md border border-stone-200 px-3 py-2 text-center text-sm dark:border-stone-700"
+                >
+                  Editar perfil
+                </Link>
+                <button className="w-full rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white">
+                  Cerrar sesiÃ³n
+                </button>
               </div>
             </div>
           </div>
 
           {/* Info / Pedidos / Preferencias */}
-          <div className="md:col-span-2 rounded-xl bg-white/90 p-6 shadow-md dark:bg-stone-900/90">
+          <div className="md:col-span-2 rounded-xl bg-[#14100b] p-6">
             <h3 className="mb-4 text-lg font-semibold text-stone-900 dark:text-white">Mi cuenta</h3>
 
             <div className="space-y-4">
@@ -450,10 +456,10 @@ export default function Account() {
                 <div className="mt-3 flex gap-3">
                   <button className="rounded-md border border-stone-200 px-3 py-1 text-sm text-black dark:text-black dark:border-stone-700">
                     Email
-                          </button>
+                  </button>
                   <button className="rounded-md border border-stone-200 px-3 py-1 text-sm text-black dark:text-black dark:border-stone-700">
                     SMS
-                    </button>
+                  </button>
                 </div>
               </div>
             </div>
@@ -519,7 +525,12 @@ export default function AdminProducts(){
 import { Link, useNavigate } from "react-router-dom";
 import { useShop } from "../context/ShopContext.jsx";
 
-const fmt = n => `$${Number(n).toFixed(2)}`;
+const fmt = (n) =>
+  new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 0,
+  }).format(Number(n || 0));
 
 export default function CartPage() {
   const { state, dispatch, priceWithDiscount } = useShop();
@@ -527,122 +538,142 @@ export default function CartPage() {
 
   const items = state.cart ?? [];
   const subtotal = items.reduce((t, i) => t + priceWithDiscount(i) * i.qty, 0);
-
   const setQty = (id, qty) =>
     dispatch({ type: "SET_QTY", payload: { id, qty: Math.max(1, qty | 0) } });
 
+  // ---- helper: obtiene imagen confiable para cada item ----
+  const getItemImage = (item) => {
+    const prod =
+      state.products?.find((p) => String(p.id) === String(item.id)) || null;
+    return (
+      item.image ||
+      item.images?.[0] ||
+      prod?.image ||
+      prod?.images?.[0] ||
+      "" // ponÃ© aquÃ­ un placeholder si querÃ©s, ej: "/img/placeholder.jpg"
+    );
+  };
+
   return (
-    <main className="bg-background-light dark:bg-background-dark text-stone-200">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-10">
-        {/* migas */}
+    <main className="bg-background-light text-white dark:bg-background-dark">
+      <div className="mx-auto max-w-7xl px-6 py-10 lg:px-8">
+        {/* Migas */}
         <p className="text-sm text-stone-400">
-          <Link to="/catalog" className="hover:text-primary">Shop</Link>
+          <Link to="/catalog" className="hover:text-primary">Tienda</Link>
           <span className="mx-2">/</span>
-          Cart
+          Carrito
         </p>
 
-        <h1 className="mt-2 text-4xl font-extrabold text-white">Your Cart</h1>
+        <h1 className="mt-2 text-4xl font-extrabold">Carrito de compras</h1>
 
-        {/* layout principal */}
-        <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-3">
-          {/* LISTA */}
-          <section className="lg:col-span-2">
-            {items.length ? (
-              <ul className="divide-y divide-primary/20">
-                {items.map((i) => (
-                  <li key={i.id} className="py-8">
-                    <div className="flex items-center gap-6">
-                      <Link
-                        to={`/product/${i.id}`}
-                        className="block h-32 w-32 flex-shrink-0 overflow-hidden rounded-lg bg-stone-800"
-                      >
-                        <img
-                          src={i.image}
-                          alt={i.name}
-                          className="h-full w-full object-cover"
-                        />
-                      </Link>
+        {/* ===== Layout principal en 12 columnas ===== */}
+        <div className="mt-10 grid gap-8 lg:[grid-template-columns:minmax(0,1fr)_360px]">
+          {/* LISTA (izquierda) */}
+          <aside className="lg:col-start-1 lg:row-start-1 lg:sticky lg:top-24 h-max bg-transparent border-none rounded-none p-0">
+            <section className="lg:col-span-8">
+              {items.length ? (
+                <ul className="divide-y divide-white/10">
+                  {items.map((i) => {
+                    const img = getItemImage(i);
+                    return (
+                      <li key={i.id} className="py-6 first:border-t first:border-white/10">
+                        <div className="grid grid-cols-[96px,1fr,auto] items-center gap-6">
+                          <Link
+                            to={`/product/${i.id}`}
+                            className="h-24 w-24 overflow-hidden rounded-lg bg-stone-800"
+                          >
+                            <img
+                              src={img}
+                              alt={i.name}
+                              loading="lazy"
+                              className="h-full w-full object-cover"
+                            />
+                          </Link>
 
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
+                          <div className="flex flex-col gap-2">
                             <Link
                               to={`/product/${i.id}`}
-                              className="text-lg font-semibold text-white hover:text-primary"
+                              className="text-lg font-semibold hover:text-primary"
                             >
                               {i.name}
                             </Link>
-                            <p className="mt-1 text-sm text-stone-400">
-                              {i.category}
-                            </p>
+                            <p className="text-sm text-stone-400">{i.category}</p>
+
+                            <div className="mt-1 flex items-center gap-3">
+                              <button
+                                onClick={() => setQty(i.id, i.qty - 1)}
+                                className="flex items-center justify-center h-8 w-8 rounded-full ring-1 ring-primary/30 hover:bg-primary/20"
+                                aria-label="disminuir"
+                              >
+                                âˆ’
+                              </button>
+                              <input
+                                value={i.qty}
+                                onChange={(e) =>
+                                  setQty(i.id, Number(e.target.value))
+                                }
+                                className="w-12 rounded-md border border-primary/20 bg-transparent p-1 text-center"
+                              />
+                              <button
+                                onClick={() => setQty(i.id, i.qty + 1)}
+                                className="flex items-center justify-center h-8 w-8 rounded-full ring-1 ring-primary/30 hover:bg-primary/20"
+                                aria-label="aumentar"
+                              >
+                                +
+                              </button>
+
+                              <button
+                                onClick={() =>
+                                  dispatch({ type: "REMOVE", payload: i.id })
+                                }
+                                className="ml-3 text-sm text-stone-400 hover:text-primary"
+                              >
+                                Quitar
+                              </button>
+                            </div>
                           </div>
-                          <p className="text-lg font-semibold text-white">
+
+                          <p className="text-right text-lg font-semibold">
                             {fmt(priceWithDiscount(i) * i.qty)}
                           </p>
                         </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <div className="rounded-xl border border-white/10 p-8 text-center text-stone-300">
+                  Carrito vacÃ­o.{" "}
+                  <Link className="text-primary" to="/catalog">
+                    Ir a la tienda
+                  </Link>
+                </div>
+              )}
+            </section>
+          </aside>
 
-                        <div className="mt-4 flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <button
-                              onClick={() => setQty(i.id, i.qty - 1)}
-                              className="h-8 w-8 rounded-full ring-1 ring-primary/30 hover:bg-primary/20"
-                              aria-label="decrease"
-                            >
-                              âˆ’
-                            </button>
-                            <input
-                              value={i.qty}
-                              onChange={(e) => setQty(i.id, Number(e.target.value))}
-                              className="w-12 rounded-md border border-primary/30 bg-transparent p-1 text-center"
-                            />
-                            <button
-                              onClick={() => setQty(i.id, i.qty + 1)}
-                              className="h-8 w-8 rounded-full ring-1 ring-primary/30 hover:bg-primary/20"
-                              aria-label="increase"
-                            >
-                              +
-                            </button>
-                          </div>
-
-                          <button
-                            onClick={() => dispatch({ type: "REMOVE", payload: i.id })}
-                            className="text-sm text-stone-400 hover:text-primary"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-stone-400">Carrito vacÃ­o. <Link className="text-primary" to="/catalog">Ir a la tienda</Link></p>
-            )}
-          </section>
-
-          {/* RESUMEN sticky */}
-          <aside className="h-max rounded-lg border border-primary/20 bg-primary/10 p-6 lg:sticky lg:top-24 overflow-hidden">
-            <h2 className="mb-4 text-lg font-bold text-white">Order Summary</h2>
+          {/* RESUMEN (derecha) */}
+          <aside className="lg:col-start-2 lg:row-start-1 lg:sticky lg:top-24 h-max rounded-xl border border-primary/20 bg-primary/5 p-6">
+            <h2 className="mb-4 text-lg font-bold">Resumen del pedido</h2>
 
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-stone-300">Subtotal</span>
-                <span className="font-medium text-stone-100">{fmt(subtotal)}</span>
+                <span className="font-medium">{fmt(subtotal)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-stone-300">Shipping</span>
-                <span className="font-medium text-stone-100">Free</span>
+                <span className="text-stone-300">EnvÃ­o</span>
+                <span className="font-medium">Gratis</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-stone-300">Tax</span>
-                <span className="font-medium text-stone-100">{fmt(0)}</span>
+                <span className="text-stone-300">Impuestos</span>
+                <span className="font-medium">{fmt(0)}</span>
               </div>
             </div>
 
             <div className="my-6 h-px bg-primary/20" />
 
-            <div className="flex justify-between font-bold text-white">
+            <div className="flex justify-between text-lg font-bold">
               <span>Total</span>
               <span>{fmt(subtotal)}</span>
             </div>
@@ -650,9 +681,9 @@ export default function CartPage() {
             <button
               disabled={!items.length}
               onClick={() => nav("/checkout")}
-              className="mt-8 w-full rounded-lg bg-primary py-3 text-sm font-bold text-white shadow-lg shadow-primary/20 transition-transform hover:shadow-lg disabled:opacity-50"
+              className="mt-6 w-full rounded-lg bg-primary py-3 text-sm font-bold text-white shadow-lg shadow-primary/20 transition hover:brightness-105 disabled:opacity-50"
             >
-              Proceed to Checkout
+              Continuar al pago
             </button>
           </aside>
         </div>
@@ -692,14 +723,14 @@ export default function Catalog() {
   }, [state?.products, wanted]);
 
   return (
-    <main className="mx-auto max-w-[1400px] px-6 py-10">
+    <main className="mx-auto max-w-8x1 px-6 py-10">
       <div className="grid gap-8 grid-cols-[280px,1fr]">
         <Filters />
         <section>
           <h1 className="text-4xl font-bold text-stone-100 mb-8">{title}</h1>
 
           {/* Ajuste de la grilla */}
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             {products.map((p) => (
               <ProductCard key={p.id} p={p} />
             ))}
@@ -723,19 +754,27 @@ export default function Checkout() {
   const onSubmit = (e) => {
     e.preventDefault();
     if (!state.cart.length) return;
-    dispatch({ type: "CLEAR" });
-    nav("/");
+    // Guardar datos del formulario
+  sessionStorage.setItem("checkout.email", form.email);
+  sessionStorage.setItem("checkout.store", form.store);
+  sessionStorage.setItem("checkout.name", form.name);
+  sessionStorage.setItem("checkout.last", form.last);
+    
+  nav("/payment");
   };
 
   return (
-    <main className="mx-auto max-w-3xl p-4 sm:p-6 lg:p-8">
+  <div className="flex min-h-[80vh] items-center justify-center">
+    <main className="w-full max-w-3xl p-4 sm:p-6 lg:p-8">
       <h1 className="text-3xl font-bold">InformaciÃ³n</h1>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-8">
         <section>
           <h2 className="text-xl font-semibold">Contacto</h2>
           <input
-            type="email" required placeholder="Email"
+            type="email"
+            required
+            placeholder="Email"
             value={form.email}
             onChange={e => setForm({ ...form, email: e.target.value })}
             className="mt-3 w-full rounded-lg border bg-transparent px-4 py-3"
@@ -762,13 +801,17 @@ export default function Checkout() {
 
           <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <input
-              required placeholder="Nombre"
-              value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
+              required
+              placeholder="Nombre"
+              value={form.name}
+              onChange={e => setForm({ ...form, name: e.target.value })}
               className="rounded-lg border bg-transparent px-4 py-3"
             />
             <input
-              required placeholder="Apellido"
-              value={form.last} onChange={e => setForm({ ...form, last: e.target.value })}
+              required
+              placeholder="Apellido"
+              value={form.last}
+              onChange={e => setForm({ ...form, last: e.target.value })}
               className="rounded-lg border bg-transparent px-4 py-3"
             />
           </div>
@@ -782,6 +825,200 @@ export default function Checkout() {
           Continuar al pago
         </button>
       </form>
+    </main>
+  </div>
+);
+}
+
+----- FILE: .\src\pages\CheckoutFinal.jsx -----
+import { useMemo } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useShop } from "../context/ShopContext.jsx";
+
+const fmt = (n) =>
+  new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 0,
+  }).format(Number(n || 0));
+
+export default function CheckoutFinal() {
+  const { state, dispatch, priceWithDiscount } = useShop();
+  const nav = useNavigate();
+
+  const items = state.cart ?? [];
+  const subtotal = useMemo(
+    () => items.reduce((t, it) => t + priceWithDiscount(it) * (it.qty || 1), 0),
+    [items, priceWithDiscount]
+  );
+
+  // datos persistidos
+  const rawMethod = localStorage.getItem("payment.method") || "";
+  const last4 = localStorage.getItem("payment.last4") || "";
+  const store = sessionStorage.getItem("checkout.store") || "A confirmar en sucursal";
+  const email = sessionStorage.getItem("checkout.email") || "â€”";
+
+  // normaliza mÃ©todos posibles
+  const methodMap = {
+    credit: "credit",
+    debit: "debit",
+    cash: "cash",
+    credito: "credit",
+    debito: "debit",
+    efectivo: "cash",
+  };
+  const method = methodMap[rawMethod] || "cash";
+
+  // etiqueta final
+  const methodLabel =
+    method === "cash"
+      ? "Efectivo al entregar"
+      : `Tarjeta ${method === "debit" ? "de dÃ©bito" : "de crÃ©dito"}${
+          last4 ? ` terminada en ${last4}` : ""
+        }`;
+
+  const onConfirm = () => {
+    dispatch({ type: "CLEAR" });
+    // limpia persistencia
+    localStorage.removeItem("payment.method");
+    localStorage.removeItem("payment.last4");
+    sessionStorage.removeItem("checkout.store");
+    sessionStorage.removeItem("checkout.email");
+    sessionStorage.removeItem("checkout.name");
+    sessionStorage.removeItem("checkout.last");
+    
+    // muestra mensaje de confirmaciÃ³n
+    Swal.fire({
+      title: 'Â¡Compra realizada!',
+      text: 'Tu pedido fue confirmado con Ã©xito.',
+      icon: 'success',
+      confirmButtonText: 'Aceptar',
+      confirmButtonColor: '#b86614', // tu color principal
+      background: '#2c1f13ff',         // fondo oscuro
+      color: '#f8f7f6',              // texto claro
+      backdrop: 'rgba(0,0,0,0.6)',   // oscurece el fondo detrÃ¡s del modal
+
+    }).then(() => {
+      // redirige al menÃº principal una vez cerrado
+      nav("/");
+    });
+  };
+
+  return (
+    <main className="bg-background-light text-white dark:bg-background-dark">
+      <div className="mx-auto max-w-7xl px-6 py-10 lg:px-8">
+        <h1 className="text-4xl font-extrabold">Checkout</h1>
+
+        <div className="mt-10 grid gap-12 lg:grid-cols-2">
+          {/* Columna izquierda: resumen de productos */}
+          <section>
+            <h2 className="mb-4 border-b border-primary/20 pb-2 text-xl font-semibold dark:border-primary/30">
+              Resumen del pedido
+            </h2>
+
+            <ul className="divide-y divide-primary/20 dark:divide-primary/30">
+              {items.map((it) => {
+                const img = it.image || it.images?.[0];
+                const totalItem = priceWithDiscount(it) * (it.qty || 1);
+                return (
+                  <li key={it.id} className="py-4">
+                    <div className="grid grid-cols-[80px,1fr,auto] items-center gap-4">
+                      <Link
+                        to={`/product/${it.id}`}
+                        className="h-20 w-20 overflow-hidden rounded-lg bg-stone-800"
+                      >
+                        {img ? (
+                          <img
+                            src={img}
+                            alt={it.name}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : null}
+                      </Link>
+
+                      <div>
+                        <Link
+                          to={`/product/${it.id}`}
+                          className="font-semibold hover:text-primary"
+                        >
+                          {it.name}
+                        </Link>
+                        <p className="text-sm text-stone-400">
+                          {it.category} Â· Cant: {it.qty || 1}
+                        </p>
+                      </div>
+
+                      <div className="text-right font-semibold">
+                        {fmt(totalItem)}
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+
+            <div className="mt-4 space-y-2 border-t border-primary/20 pt-4 dark:border-primary/30">
+              <div className="flex justify-between text-base">
+                <span>Subtotal</span>
+                <span>{fmt(subtotal)}</span>
+              </div>
+              <div className="flex justify-between text-base">
+                <span>EnvÃ­o</span>
+                <span>Gratis</span>
+              </div>
+              <div className="flex justify-between border-t border-primary/20 pt-2 text-lg font-bold dark:border-primary/30">
+                <span>Total</span>
+                <span>{fmt(subtotal)}</span>
+              </div>
+              {method === "cash" && (
+                <p className="text-sm text-amber-300/90">
+                  RecordÃ¡ tener billetes en buen estado y, en lo posible, el
+                  monto justo.
+                </p>
+              )}
+            </div>
+          </section>
+
+          {/* Columna derecha: datos de retiro + mÃ©todo de pago */}
+          <aside>
+            <section className="space-y-6">
+              <div>
+                <h3 className="mb-3 border-b border-primary/20 pb-2 text-xl font-semibold dark:border-primary/30">
+                  Retiro en sucursal
+                </h3>
+                <div className="rounded-lg border border-primary/20 p-4 dark:border-primary/30">
+                  <p className="text-sm text-stone-300">Sucursal</p>
+                  <p className="font-medium">{store}</p>
+                  <p className="mt-2 text-sm text-stone-300">Contacto</p>
+                  <p className="font-medium">{email}</p>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="mb-3 border-b border-primary/20 pb-2 text-xl font-semibold dark:border-primary/30">
+                  MÃ©todo de pago
+                </h3>
+                <div className="flex items-center justify-between rounded-lg bg-primary/10 p-4 dark:bg-primary/20">
+                  <p className="font-medium">{methodLabel}</p>
+                  <Link
+                    to="/payment"
+                    className="text-sm text-primary hover:opacity-90"
+                  >
+                    Cambiar
+                  </Link>
+                </div>
+              </div>
+
+              <button
+                onClick={onConfirm}
+                className="w-full rounded-lg bg-primary py-3 text-sm font-bold text-white hover:bg-primary/90"
+              >
+                Confirmar pedido
+              </button>
+            </section>
+          </aside>
+        </div>
+      </div>
     </main>
   );
 }
@@ -929,10 +1166,10 @@ export default function Home() {
   return (
     <main className="flex-1">
       {/* HERO */}
-      <section className="py-12 md:py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section className="py-16 md:py-30">
+        <div className="mx-auto w-8xl px-4 sm:px-6 lg:px-8">
           <div
-            className="relative flex min-h-[480px] items-center justify-center overflow-hidden rounded-xl bg-cover bg-center p-8 text-center"
+            className="relative flex min-h-[600px] items-center justify-center overflow-hidden rounded-xl bg-cover bg-center p-8 text-center"
             style={{
               backgroundImage:
                 'linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.5)), url("https://lh3.googleusercontent.com/aida-public/AB6AXuBSfetmgcEEAPqxn90x0d4neJA5JipPFfgpYlgL4mU2dKmIghVxndjkaq_klTgQVjHsWal3yO9o1IKNbR_WlUwcOkVT5GxkLOArd0l_sbF4r81vrV8F4bLuy1emgFGZrWH8clsIvvJRXez3BSAE2C_YKuDPPTzCmDfFGBObaYgrttUmJjMSzuXO_0UcR7hSc9kbXRKJFZ2o8hfPZgYF82bWBjAj8WuE-KZY1mSHVbSfcwiAZBIOJMsOC3b_zDSfJAlIg1P17Bujblc")',
@@ -959,10 +1196,10 @@ export default function Home() {
       </section>
    {/* FEATURED */}
 <section className="py-12 md:py-16">
-  <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+  <div className="mx-auto max-w-8xl px-4 sm:px-6 lg:px-8">
     <h2 className="text-2xl font-bold text-stone-900 dark:text-white">Featured Guitars</h2>
 
-    <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div className="mt-6 grid grid-cols-3 gap-6 md:grid-cols-2 lg:grid-cols-3">
       {[
         {
           title: "The 'Prairie Song' Acoustic",
@@ -1002,16 +1239,16 @@ export default function Home() {
 
 {/* CATEGORIES */}
 <section className="py-12 md:py-16">
-  <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+  <div className="mx-auto max-w-8xl px-4 sm:px-6 lg:px-8">
     <h2 className="text-2xl font-bold text-stone-900 dark:text-white">Shop by Category</h2>
 
-    <div className="mt-6 grid grid-cols-2 gap-6 md:grid-cols-4">
+    <div className="mt-6 grid grid-cols-4 gap-6 md:grid-cols-4">
       {[
         {
-          title: "Acoustic Guitars",
-          text: "Explore our range of acoustic guitars.",
+          title: "Guitars",
+          text: "Explore our range of guitars.",
           img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDJrIylck-_TSgSDirpXHOfdt1uv835vHVw3odnmBaNB_lcYNckSLAlmFoK_eXrrsjG8C0c2irKLty2K5Nhfg_EyiYEy8EMTSo0Wy092fXNr2heG3F40q1hzqALMGnIZ6SdImImWd5aa5-yfmTvUgesyIJqiL4WBL1rvln95_YCA_M1eG4Mh-s55WU_B3XSiJuE8iIyxJH2ALWDJvzCdubVW7KA3wdaSOvU68T_B2_eBJUKqCnfGvujSmvero-vhOmSsvIRRpeiKZM",
-          to: "/catalog?cat=acoustic",
+          to: "/catalog?",
         },
         {
           title: "Electric Guitars",
@@ -1024,6 +1261,12 @@ export default function Home() {
           text: "Find the perfect bass guitar for your style.",
           img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDqnpHQE5yhMjM5ZOSN1dQUs-aGIgzx4iMtTyk3J1pcIYwH8by3PyAx02riMLYf7OIn-KuP43RtnL_qNkIRzQS2Sv852HnAAlNFnUmZhF39yzc30W80GKjBhK2hhJl_PLvX0nsOgiWgCJYFRyUYwSywt0LUEPsIi9VGG_cDCtmyYejC72HEqFOmYAym8Iyv4If-5LaVNsF0ZwaVZ_56qtqe1ZN3fnrtW38IJbWFRDQ9HlnM4AeoGFLYZA-_IWU9mhQoLoIBaBGMWvA",
           to: "/catalog?cat=bass",
+        },
+        {
+          title: "Acoustic Guitars",
+          text: "Explore our range of acoustic guitars.",
+          img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDJrIylck-_TSgSDirpXHOfdt1uv835vHVw3odnmBaNB_lcYNckSLAlmFoK_eXrrsjG8C0c2irKLty2K5Nhfg_EyiYEy8EMTSo0Wy092fXNr2heG3F40q1hzqALMGnIZ6SdImImWd5aa5-yfmTvUgesyIJqiL4WBL1rvln95_YCA_M1eG4Mh-s55WU_B3XSiJuE8iIyxJH2ALWDJvzCdubVW7KA3wdaSOvU68T_B2_eBJUKqCnfGvujSmvero-vhOmSsvIRRpeiKZM",
+          to: "/catalog?cat=acoustic",
         },
        
       ].map((c) => (
@@ -1057,12 +1300,12 @@ import { Link } from "react-router-dom";
 export default function Login() {
   return (
     <div className="flex min-h-[70vh] items-center justify-center px-4 py-12 sm:py-20">
-      <div className="w-full max-w-md">
-        <div className="rounded-xl bg-white/90 p-8 shadow-md dark:bg-stone-900/90">
+      <div className="w-full max-w-xl">
+        <div className="rounded-xl bg-[#14100b] p-6">
           <h2 className="mb-2 text-2xl font-semibold text-stone-900 dark:text-white">Bienvenido de nuevo</h2>
           <p className="mb-6 text-sm text-stone-600 dark:text-stone-300">Inicia sesiÃ³n con tu cuenta para continuar</p>
 
-          <form className="space-y-4">
+          <form className="space-y-6">
             <label className="block">
               <span className="text-sm text-stone-700 dark:text-stone-200">E-mail</span>
               <input
@@ -1115,85 +1358,377 @@ export default function Login() {
 
 ----- FILE: .\src\pages\NotFound.jsx -----
 
+----- FILE: .\src\pages\Payment.jsx -----
+// src/pages/Payment.jsx
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useShop } from "../context/ShopContext.jsx";
+
+const fmt = (n) =>
+  new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 0,
+  }).format(Number(n || 0));
+
+export default function Payment() {
+  const nav = useNavigate();
+  const { state, priceWithDiscount } = useShop();
+
+  const items = state.cart ?? [];
+  const total = items.reduce((t, i) => t + priceWithDiscount(i) * i.qty, 0);
+
+  const [method, setMethod] = useState("credit"); // "credit" | "debit" | "cash"
+  const [card, setCard] = useState({ number: "", exp: "", cvv: "", name: "" });
+
+ // Payment.jsx
+const submit = (e) => {
+  e.preventDefault();
+  if (!items.length) return;
+
+  // normaliza mÃ©todo: "credit" | "debit" | "cash"
+  const m = method;
+
+  // toma Ãºltimos 4 si es tarjeta
+  const last4 =
+    m === "cash"
+      ? ""
+      : (card.number || "").replace(/\D/g, "").slice(-4);
+
+  localStorage.setItem("payment.method", m);
+  localStorage.setItem("payment.last4", last4);
+
+  nav("/checkout-final");
+};
+
+
+
+  return (
+    <div className="flex min-h-[80vh] items-start justify-center">
+      <main className="w-full max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
+        <h1 className="mb-6 text-3xl font-bold">MÃ©todo de pago</h1>
+
+        <form onSubmit={submit} className="space-y-8">
+          {/* MÃ©todos */}
+          <div className="space-y-3">
+            {[
+              { id: "credit", label: "CrÃ©dito" },
+              { id: "debit", label: "DÃ©bito" },
+              { id: "cash",  label: "Efectivo al entregar" },
+            ].map((opt) => (
+              <label
+                key={opt.id}
+                className={`flex cursor-pointer items-center justify-between rounded-lg border px-4 py-4 ${
+                  method === opt.id
+                    ? "border-primary/60 bg-primary/10"
+                    : "border-white/10 bg-transparent"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <input
+                    type="radio"
+                    name="method"
+                    value={opt.id}
+                    checked={method === opt.id}
+                    onChange={() => setMethod(opt.id)}
+                    className="h-4 w-4 accent-primary"
+                  />
+                  <span className="text-sm">{opt.label}</span>
+                </div>
+              </label>
+            ))}
+          </div>
+
+          {/* Contenido por mÃ©todo */}
+          {method === "cash" ? (
+            <div className="rounded-lg border border-white/10 p-5">
+              <div className="mb-3 flex items-center justify-between text-lg font-semibold">
+                <span>Total</span>
+                <span>{fmt(total)}</span>
+              </div>
+              <p className="text-sm opacity-80">
+                RecordÃ¡ tener billetes en buen estado y pagar justo en lo posible.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-5">
+              <div>
+                <label className="mb-2 block text-sm opacity-80">NÃºmero de tarjeta</label>
+                <input
+                  inputMode="numeric"
+                  placeholder="0000 0000 0000 0000"
+                  value={card.number}
+                  onChange={(e) => setCard((c) => ({ ...c, number: e.target.value }))}
+                  className="w-full rounded-lg border border-white/10 bg-transparent px-4 py-3"
+                  required={method !== "cash"}
+                  disabled={method === "cash"}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div>
+                  <label className="mb-2 block text-sm opacity-80">Vencimiento</label>
+                  <input
+                    placeholder="MM/AA"
+                    value={card.exp}
+                    onChange={(e) => setCard((c) => ({ ...c, exp: e.target.value }))}
+                    className="w-full rounded-lg border border-white/10 bg-transparent px-4 py-3"
+                    required={method !== "cash"}
+                    disabled={method === "cash"}
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm opacity-80">CVV</label>
+                  <input
+                    placeholder="123"
+                    value={card.cvv}
+                    onChange={(e) => setCard((c) => ({ ...c, cvv: e.target.value }))}
+                    className="w-full rounded-lg border border-white/10 bg-transparent px-4 py-3"
+                    required={method !== "cash"}
+                    disabled={method === "cash"}
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm opacity-80">Nombre en la tarjeta</label>
+                  <input
+                    placeholder="Nombre y Apellido"
+                    value={card.name}
+                    onChange={(e) => setCard((c) => ({ ...c, name: e.target.value }))}
+                    className="w-full rounded-lg border border-white/10 bg-transparent px-4 py-3"
+                    required={method !== "cash"}
+                    disabled={method === "cash"}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={!items.length}
+            className="w-full rounded-lg bg-primary py-3 font-semibold text-white hover:brightness-110 disabled:opacity-50"
+          >
+            Confirmar pago
+          </button>
+        </form>
+      </main>
+    </div>
+  );
+}
+
 ----- FILE: .\src\pages\ProductDetail.jsx -----
 import { useParams } from "react-router-dom";
 import { useShop } from "../context/ShopContext.jsx";
 
+const fmt = (n) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(Number(n || 0));
+
 export default function ProductDetail() {
   const { id } = useParams();
   const { state, dispatch, priceWithDiscount } = useShop();
+  const p = state.products.find((x) => String(x.id) === id);
 
-  const p = state.products.find(x => String(x.id) === id);
-  if (!p) return <main className="mx-auto max-w-7xl p-6">Producto no encontrado.</main>;
+  if (!p) {
+    return (
+      <main className="mx-auto max-w-7xl p-6">
+        Producto no encontrado.
+      </main>
+    );
+  }
 
+  const hero = p.image || p.images?.[0];
+  const thumbs = p.gallery?.length ? p.gallery : p.images?.slice(0, 3) || [];
   const final = priceWithDiscount(p);
 
-  return (
-    <main className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
-      <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
-        {/* galerÃ­a simple */}
-        <div>
+return (
+  <main className="w-full py-8">
+    {/* Contenedor centrado con padding lateral */}
+    <div className="mx-auto max-w-max-w-8xl px-10 sm:px-16 lg:px-24">
+      <div className="grid gap-10 md:grid-cols-12">
+        {/* GalerÃ­a (izquierda) */}
+        <section className="md:col-span-6">
           <div className="overflow-hidden rounded-xl bg-stone-200 dark:bg-stone-800">
-            <img src={p.image} alt={p.name} className="w-full object-cover" />
+            <img
+              src={hero}
+              alt={p.name}
+              className="w-full object-cover"
+              style={{ aspectRatio: '5 / 3' }}
+            />
           </div>
-          {Array.isArray(p.gallery) && p.gallery.length ? (
+
+          {!!thumbs.length && (
             <div className="mt-4 grid grid-cols-3 gap-3">
-              {p.gallery.map((g, i) => (
-                <img key={i} src={g} alt={`${p.name}-${i}`} className="aspect-square w-full rounded-lg object-cover" />
+              {thumbs.map((g, i) => (
+                <div
+                  key={i}
+                  className="overflow-hidden rounded-lg bg-stone-200 dark:bg-stone-800"
+                >
+                  <img
+                    src={g}
+                    alt={`${p.name}-${i}`}
+                    className="h-full w-full object-cover"
+                    style={{ aspectRatio: '4 / 3' }}
+                  />
+                </div>
               ))}
             </div>
-          ) : null}
-        </div>
+          )}
+        </section>
 
-        {/* info */}
-        <div>
+        {/* InformaciÃ³n (derecha) */}
+        <aside className="md:col-span-5">
           <h1 className="text-3xl font-bold">{p.name}</h1>
-          <p className="mt-2 opacity-80">{p.short || p.description || "â€”"}</p>
 
-          <div className="mt-6 flex items-end gap-3">
-            <div className="text-3xl font-extrabold text-primary">${final}</div>
-            {p.discount ? <div className="text-lg line-through opacity-60">${p.price}</div> : null}
+          <div className="mt-4">
+            <div className="text-2xl font-extrabold text-primary">
+              {fmt(final)}
+            </div>
+            {p.discount ? (
+              <div className="text-sm opacity-60 line-through">{fmt(p.price)}</div>
+            ) : null}
           </div>
 
-          <div className="mt-6 flex gap-3">
+          <div className="mt-5 flex gap-6">
             <button
               onClick={() => dispatch({ type: "ADD", payload: p })}
-              className="rounded-lg bg-primary px-6 py-3 font-semibold text-white hover:bg-primary/80"
+              className="rounded-lg bg-primary px-40 py-2 font-semibold text-white hover:bg-primary/80"
             >
               Add to Cart
             </button>
-            <span className="self-center text-sm opacity-70">{p.stock > 0 ? `${p.stock} en stock` : "Sin stock"}</span>
+            <span className="self-center text-sm opacity-70">
+              {p.stock > 0 ? `${p.stock} en stock` : "Sin stock"}
+            </span>
           </div>
 
-          {/* specs opcionales */}
-          <div className="mt-10">
-            <h2 className="mb-3 text-xl font-bold">Specifications</h2>
-            <dl className="-mx-4 divide-y divide-white/10 rounded-lg border border-white/10">
+          {/* DescripciÃ³n */}
+          <section className="mt-8">
+            <h2 className="mb-2 text-lg font-bold">Description</h2>
+            <p className="opacity-80">{p.short || p.description || "â€”"}</p>
+          </section>
+
+          {/* Especificaciones */}
+          <section className="mt-8">
+            <h2 className="mb-2 text-lg font-bold">Specifications</h2>
+            <dl className="divide-y divide-white/10 rounded-lg">
               {[
-                ["Top Wood", p.topWood || p.woodTop],
-                ["Back & Sides", p.backSides || p.wood],
-                ["Neck", p.neck],
-                ["Fretboard", p.fretboard],
-                ["Scale", p.scale],
-                ["Finish", p.finish],
-              ].filter(([, v]) => v).map(([k, v]) => (
-                <div key={k} className="grid grid-cols-2 gap-4 px-4 py-3">
-                  <dt className="opacity-70">{k}</dt>
-                  <dd className="text-right">{v}</dd>
-                </div>
-              ))}
+                  ["Top Wood", p.topWood || p.woodTop],
+                  ["Back & Sides", p.backSides || p.wood],
+                  ["Neck", p.neck],
+                  ["Fretboard", p.fretboard],
+                  ["Scale", p.scale],
+                  ["Nut Width", p.nutWidth],
+                  ["Finish", p.finish],
+                ]
+                  .filter(([, v]) => v)
+                  .map(([k, v], i) => (
+                    <div
+                      key={k}
+                      className={`grid grid-cols-2 gap-4 px-4 py-3 ${
+                        i === 0 ? "border-t border-white/10" : ""
+                      } border-b border-white/10`}
+                    >
+                      <dt className="opacity-70">{k}</dt>
+                      <dd className="text-right">{v}</dd>
+                    </div>
+                  ))}
             </dl>
-          </div>
-        </div>
-      </div>
+          </section>
+        </aside>
 
-      {/* reviews placeholder */}
-      <section className="mt-14">
-        <h2 className="text-xl font-bold">Customer Reviews</h2>
-        <p className="mt-2 text-sm opacity-70">PrÃ³ximamente.</p>
-      </section>
-    </main>
-  );
+        {/* Reviews abajo, a todo el ancho */}
+        <section className="md:col-span-12 mt-8">
+          <h2 className="text-lg font-bold mb-3">Customer Reviews</h2>
+
+          {/* Si hay reviews */}
+          {p.reviews && p.reviews.length > 0 ? (
+            <>
+              {/* CalificaciÃ³n promedio + distribuciÃ³n */}
+              {(() => {
+                const total = p.reviews.length;
+                const avg =
+                  p.reviews.reduce((sum, r) => sum + r.rating, 0) / total;
+                const counts = [5, 4, 3, 2, 1].map(
+                  (n) => p.reviews.filter((r) => r.rating === n).length
+                );
+                return (
+                  <div className="mt-4 grid gap-4 rounded-lg border border-white/10 p-4 md:grid-cols-[160px,1fr]">
+                    {/* Promedio */}
+                    <div>
+                      <div className="text-3xl font-bold">
+                        {avg.toFixed(1)}
+                      </div>
+                      <div className="text-sm opacity-70">
+                        based on {total} review{total !== 1 ? "s" : ""}
+                      </div>
+                    </div>
+
+                    {/* Barras por estrellas */}
+                    <div className="space-y-2">
+                      {[5, 4, 3, 2, 1].map((n, i) => {
+                        const percent =
+                          total > 0 ? (counts[i] / total) * 100 : 0;
+                        return (
+                          <div
+                            key={n}
+                            className="flex items-center gap-3"
+                          >
+                            <span className="w-6 text-sm">{n}â˜…</span>
+                            <div className="h-2 flex-1 rounded bg-stone-700">
+                              <div
+                                className="h-2 rounded bg-amber-500 transition-all"
+                                style={{ width: `${percent}%` }}
+                              />
+                            </div>
+                            <span className="w-10 text-right text-xs opacity-70">
+                              {percent.toFixed(0)}%
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Lista de comentarios */}
+              <div className="mt-6 space-y-4">
+                {p.reviews.map((r, i) => (
+                  <div
+                    key={i}
+                    className="rounded-lg border border-white/10 p-4 shadow-sm"
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <h4 className="font-semibold">{r.user}</h4>
+                      <div className="flex text-amber-500">
+                        {Array.from({ length: 5 }).map((_, idx) => (
+                          <span key={idx}>{idx < r.rating ? "â˜…" : "â˜†"}</span>
+                        ))}
+                      </div>
+                    </div>
+                    <p className="text-sm opacity-90">{r.comment}</p>
+                    <p className="mt-1 text-xs opacity-60">{r.date}</p>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            // Si no hay reviews
+            <div className="rounded-lg border border-white/10 p-4 text-sm opacity-80">
+              TodavÃ­a no hay reseÃ±as para este producto.
+            </div>
+          )}
+        </section>
+
+
+
+      </div>
+    </div>
+  </main>
+);
 }
 
 ----- FILE: .\src\pages\Register.jsx -----
@@ -1203,12 +1738,12 @@ import { Link } from "react-router-dom";
 export default function Register() {
   return (
     <div className="flex min-h-[70vh] items-center justify-center px-4 py-12 sm:py-20">
-      <div className="w-full max-w-lg">
-        <div className="rounded-xl bg-white/90 p-8 shadow-md dark:bg-stone-900/90">
+      <div className="w-full max-w-xl">
+        <div className="rounded-xl bg-[#14100b] p-6">
           <h2 className="mb-2 text-2xl font-semibold text-stone-900 dark:text-white">Crea tu cuenta</h2>
           <p className="mb-6 text-sm text-stone-600 dark:text-stone-300">RegÃ­strate para acceder a ventas, listas y tu cuenta</p>
 
-          <form className="grid gap-4">
+          <form className="grid gap-6">
             <div>
               <label className="block text-sm text-stone-700 dark:text-stone-200">Nombre completo</label>
               <input type="text" required className="mt-1 block w-full rounded-md border border-stone-200 px-3 py-2 text-sm placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-primary dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100" placeholder="Tu nombre" />
@@ -1348,45 +1883,9 @@ export default function Search() {
             {qParam ? <>Mostrando resultados para <span className="italic">â€œ{qParam}â€</span></> : "Escribe un tÃ©rmino para buscar."}
           </p>
 
-          {/* === Barra de bÃºsqueda estilo plantilla === */}
-          <form onSubmit={onSubmit} className="mt-4">
-            <div className="flex items-center rounded-2xl bg-[#20160F] border border-stone-700/70 px-2 py-2">
-
-              {/* CÃ¡psula del icono */}
-              <div className="ml-1 mr-2 flex h-9 w-9 items-center justify-center rounded-full bg-stone-900/80 border border-stone-700">
-                <svg width="18" height="18" viewBox="0 0 24 24" className="text-stone-400" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="11" cy="11" r="7" />
-                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
-              </div>
-
-              {/* Input */}
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Guitarras AcÃºsticas"
-                className="w-full h-9 bg-transparent text-stone-200 placeholder:text-stone-500 outline-none"
-              />
-
-              {/* BotÃ³n limpiar en cÃ­rculo */}
-              {qParam && (
-                <Link
-                  to="/search"
-                  className="ml-2 mr-1 flex h-8 w-8 items-center justify-center rounded-full border border-stone-700 text-stone-400 hover:text-stone-200"
-                  title="Limpiar"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </Link>
-              )}
-            </div>
-          </form>
-          {/* === Fin barra de bÃºsqueda === */}
 
           {/* Grilla de resultados */}
-          <div className="mt-6 grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {slice.map((p) => (
               <ProductCard key={p.id} p={p} />
             ))}
@@ -1425,6 +1924,8 @@ import Footer from "./components/Footer.jsx";
 import Contact from "./pages/Contact.jsx";
 import FAQ from "./pages/FAQ.jsx";
 import Search from "./pages/Search.jsx";
+import Payment from "./pages/Payment.jsx";
+import CheckoutFinal from "./pages/CheckoutFinal.jsx";
 
 
 
@@ -1434,14 +1935,16 @@ export default function App() {
   return (
     <>
       <NavBar />
-      <div className="pt-16">
+      <div className="pt-14">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/catalog" element={<Catalog />} />
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/cart" element={<CartPage />} />
+          <Route path="/payment" element={<Payment />} />   
           <Route path="/checkout" element={<Checkout />} />
+          <Route path="/checkout-final" element={<CheckoutFinal />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/account" element={<Account />} />
@@ -1484,6 +1987,7 @@ createRoot(document.getElementById('root')).render(
     <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64," />
     <!-- Tailwind CDN + config -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&display=swap" rel="stylesheet" />

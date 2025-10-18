@@ -15,6 +15,9 @@ import FAQ from "./pages/FAQ.jsx";
 import Search from "./pages/Search.jsx";
 import Payment from "./pages/Payment.jsx";
 import CheckoutFinal from "./pages/CheckoutFinal.jsx";
+import ProtectedRoute from './router/ProtectedRoute.jsx';
+import AdminProducts from "./pages/AdminProducts.jsx";
+
 
 
 
@@ -40,7 +43,11 @@ export default function App() {
           <Route path="/contact" element={<Contact />} />
           <Route path="/faq" element={<FAQ />} />
           <Route path="*" element={<Navigate to="/" replace />} />
-           <Route path="/search" element={<Search />} />
+          <Route path="/search" element={<Search />} />
+          <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
+          <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+          <Route path="/admin" element={<ProtectedRoute role="ADMIN"><AdminProducts /></ProtectedRoute>} />
+
         
         </Routes>
       </div>

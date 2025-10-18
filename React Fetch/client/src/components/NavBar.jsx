@@ -1,18 +1,25 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useShop } from "../context/ShopContext.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
 
 export default function NavBar() {
   const [query, setQuery] = useState("");
   const navigate = useNavigate();
   const { state } = useShop();
+  const { isAuth, user, logout } = useAuth(); // ← 1) usamos auth
 
   const count = (state?.cart ?? []).reduce((n, it) => n + (it.qty ?? it.quantity ?? 1), 0);
 
   const handleSearch = (e) => {
     e.preventDefault();
     const q = query.trim();
-    if (q) navigate(`/search?q=${encodeURIComponent(q)}`); // <— antes iba a /catalog
+    if (q) navigate(`/search?q=${encodeURIComponent(q)}`);
+  };
+
+  const handleLogout = () => { // ← 2) handler de logout
+    logout();                  // limpia token y estado
+    navigate("/");             // redirige
   };
 
   return (
@@ -47,9 +54,19 @@ export default function NavBar() {
             </svg>
           </form>
 
-          <Link to="/login" className="rounded-md px-3 py-2 text-sm font-medium text-stone-700 hover:bg-primary/10 dark:text-stone-200">Iniciar sesión</Link>
-          <Link to="/register" className="rounded-md bg-primary px-3 py-2 text-sm font-semibold text-white hover:opacity-95">Registrarse</Link>
+          {/* 3) Si NO hay sesión: botones login/register como antes */}
+          {!isAuth && (
+            <>
+              <Link to="/login" className="rounded-md px-3 py-2 text-sm font-medium text-stone-700 hover:bg-primary/10 dark:text-stone-200">
+                Iniciar sesión
+              </Link>
+              <Link to="/register" className="rounded-md bg-primary px-3 py-2 text-sm font-semibold text-white hover:opacity-95">
+                Registrarse
+              </Link>
+            </>
+          )}
 
+          {/* Carrito siempre visible */}
           <Link to="/cart" className="relative rounded p-2 text-stone-600 hover:bg-primary/10 dark:text-stone-300" aria-label="Carrito">
             <svg fill="currentColor" width="20" height="20" viewBox="0 0 256 256">
               <path d="M222.14,58.87A8,8,0,0,0,216,56H54.68L49.7,27.44A8,8,0,0,0,42,24H16a8,8,0,0,0,0,16H34.29l30.36,139.86A28,28,0,1,0,116,204h76a28,28,0,1,0,27.14-39.13L199.09,88h11.78A8,8,0,0,0,222.14,58.87Z" />
@@ -60,21 +77,29 @@ export default function NavBar() {
               </span>
             )}
           </Link>
-          <Link
-            to="/account"
-            className="relative rounded-full p-2 text-stone-600 hover:bg-primary/10 dark:text-stone-300"
-            aria-label="Perfil de usuario"
-          >
-            <svg
-              fill="currentColor"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-            >
-              <path d="M12 2a5 5 0 0 1 5 5v1a5 5 0 1 1-10 0V7a5 5 0 0 1 5-5zm0 10a4 4 0 0 0-4 4v3h8v-3a4 4 0 0 0-4-4z" />
-            </svg>
-          </Link>
-          
+
+          {/* 4) Si HAY sesión: avatar + cuenta + salir */}
+          {isAuth && (
+            <>
+              <Link
+                to="/account"
+                className="relative rounded-full p-2 text-stone-600 hover:bg-primary/10 dark:text-stone-300"
+                aria-label="Perfil de usuario"
+                title={user?.sub || "Mi cuenta"}
+              >
+                <svg fill="currentColor" width="20" height="20" viewBox="0 0 24 24">
+                  <path d="M12 2a5 5 0 0 1 5 5v1a5 5 0 1 1-10 0V7a5 5 0 0 1 5-5zm0 10a4 4 0 0 0-4 4v3h8v-3a4 4 0 0 0-4-4z" />
+                </svg>
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="rounded-md px-3 py-2 text-sm font-medium text-stone-700 hover:bg-primary/10 dark:text-stone-200"
+                aria-label="Salir"
+              >
+                Salir
+              </button>
+            </>
+          )}
         </div>
       </div>
     </header>

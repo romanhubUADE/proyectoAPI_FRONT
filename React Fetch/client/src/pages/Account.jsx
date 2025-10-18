@@ -1,8 +1,32 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useMemo } from "react";
+import { useAuth } from "../context/AuthContext.jsx";
 
 export default function Account() {
-  // Temporal: datos de ejemplo. Reemplazar con datos reales del contexto auth cuando exista.
-  const user = { name: "Usuario Ejemplo", email: "usuario@ejemplo.com", memberSince: "2024" };
+  const { user, logout } = useAuth(); // user viene del JWT decodificado
+  const nav = useNavigate();
+
+  // Deriva nombre y email reales desde el token
+  const email = user?.sub || user?.email || "usuario@desconocido";
+  const name = useMemo(() => {
+    const fn = user?.firstName || user?.given_name;
+    const ln = user?.lastName || user?.family_name;
+    if (fn || ln) return [fn, ln].filter(Boolean).join(" ");
+    // fallback: nombre a partir del email
+    return String(email).split("@")[0] || "Usuario";
+  }, [user, email]);
+
+  // Iniciales para el avatar
+  const initials = useMemo(() => {
+    const parts = String(name).trim().split(/\s+/).slice(0, 2);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }, [name]);
+
+  const onLogout = () => {
+    logout();
+    nav("/"); // redirige al home
+  };
 
   return (
     <div className="flex min-h-[70vh] items-start justify-center px-4 py-12 sm:py-20">
@@ -12,12 +36,13 @@ export default function Account() {
           <div className="rounded-xl bg-[#14100b] p-6">
             <div className="flex flex-col items-center gap-4 text-center">
               <div className="flex h-28 w-28 items-center justify-center rounded-full bg-stone-100 text-2xl font-semibold text-stone-700 dark:bg-stone-700 dark:text-white">
-                {user.name.split(" ").map(n => n[0]).slice(0,2).join("")}
+                {initials}
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-stone-900 dark:text-white">{user.name}</h3>
-                <p className="text-sm text-stone-600 dark:text-stone-300">{user.email}</p>
-                <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">Miembro desde {user.memberSince}</p>
+                <h3 className="text-lg font-semibold text-stone-900 dark:text-white">{name}</h3>
+                <p className="text-sm text-stone-600 dark:text-stone-300">{email}</p>
+                {/* Si luego sumás "memberSince" real, reemplaza esta línea */}
+                {/* <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">Miembro desde 2024</p> */}
               </div>
 
               <div className="mt-4 flex w-full flex-col gap-2">
@@ -27,7 +52,10 @@ export default function Account() {
                 >
                   Editar perfil
                 </Link>
-                <button className="w-full rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white">
+                <button
+                  onClick={onLogout}
+                  className="w-full rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white"
+                >
                   Cerrar sesión
                 </button>
               </div>
