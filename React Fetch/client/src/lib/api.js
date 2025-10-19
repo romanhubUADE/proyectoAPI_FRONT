@@ -1,7 +1,7 @@
 // src/lib/api.js
 const BASE = import.meta.env.VITE_API_URL;
 
-function authHeaders() {
+function authHeader() {
   const t = localStorage.getItem('token');
   return t ? { Authorization: `Bearer ${t}` } : {};
 }
@@ -9,42 +9,61 @@ function authHeaders() {
 async function http(path, { method='GET', body, headers } = {}) {
   const res = await fetch(`${BASE}${path}`, {
     method,
-    headers: { 'Content-Type': 'application/json', ...authHeaders(), ...headers },
+    headers: { ...(body ? { 'Content-Type':'application/json' } : {}), ...authHeader(), ...headers },
     body: body ? JSON.stringify(body) : undefined,
-    credentials: 'omit',
   });
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
   const ct = res.headers.get('content-type') || '';
-  return ct.includes('application/json') ? res.json() : res.arrayBuffer();
+  const data = ct.includes('application/json') ? await res.json() : await res.text();
+  if (!res.ok) throw new Error(typeof data === 'string' ? data : data?.message || `${res.status} ${res.statusText}`);
+  return data;
 }
 
-export const api = {
+// --- normalizadores ---
+const normalizeImage = (prodId) => (img) =>
+  img?.url || `${BASE}/api/products/${prodId}/images/${img?.id}`;
 
-  listProducts: async () => {
-  const r = await http('/api/products');    // devuelve {data:[...], message:'...'}
-  return Array.isArray(r) ? r : (Array.isArray(r?.data) ? r.data : []);},
-  
+const normalizeProduct = (dto) => ({
+  id: dto.id,
+  name: dto.name,
+  description: dto.description,
+  price: dto.price,
+  stock: dto.stock,
+  categoryId: dto.categoryId,
+  category: dto.categoryDescription,
+  activo: dto.activo ?? true,
+  images: Array.isArray(dto.images) ? dto.images.map(normalizeImage(dto.id)) : [],
+  discount: Number(dto.descuento) || 0,
+});
+
+export const api = {
   // Auth
-  register: (data) => http('/api/v1/auth/register', { method:'POST', body:data }), // :contentReference[oaicite:10]{index=10}
-  login:    (data) => http('/api/v1/auth/authenticate', { method:'POST', body:data }), // :contentReference[oaicite:11]{index=11}
+  register: (data) => http('/api/v1/auth/register', { method: 'POST', body: data }),
+  login:    (data) => http('/api/v1/auth/authenticate', { method: 'POST', body: data }),
 
   // Productos
-  listProducts: () => http('/api/products'),                // GET público :contentReference[oaicite:12]{index=12}
-  getProduct:   (id) => http(`/api/products/${id}`),        // :contentReference[oaicite:13]{index=13}
-  createProduct:(dto)=> http('/api/products',{method:'POST',body:dto}), // ADMIN :contentReference[oaicite:14]{index=14}
-  patchProduct: (id, dto)=> http(`/api/products/${id}`,{method:'PATCH',body:dto}), // :contentReference[oaicite:15]{index=15}
-  deleteProduct:(id)=> http(`/api/products/${id}`,{method:'DELETE'}),    // :contentReference[oaicite:16]{index=16}
-  activateProduct:(id)=> http(`/api/products/${id}/activar`,{method:'PATCH'}), // :contentReference[oaicite:17]{index=17}
+  listProducts: async () => {
+    const r = await http('/api/products');              // { data:[...], message } o []
+    const arr = Array.isArray(r) ? r : (Array.isArray(r?.data) ? r.data : []);
+    return arr.map(normalizeProduct);
+  },
+  getProduct: async (id) => {
+    const dto = await http(`/api/products/${id}`);      // ProductResponseDTO
+    return normalizeProduct(dto);
+  },
+  createProduct: (dto) => http('/api/products', { method: 'POST', body: dto }),
+  patchProduct:  (id, dto) => http(`/api/products/${id}`, { method: 'PATCH', body: dto }),
+  deleteProduct: (id) => http(`/api/products/${id}`, { method: 'DELETE' }),
+  activateProduct: (id) => http(`/api/products/${id}/activar`, { method: 'PATCH' }),
 
   // Categorías
-  listCategories: ()=> http('/categories'),                       // :contentReference[oaicite:18]{index=18}
-  createCategory: (dto)=> http('/categories',{method:'POST',body:dto}), // :contentReference[oaicite:19]{index=19}
-  deleteCategory: (id)=> http(`/categories/${id}`,{method:'DELETE'}),   // :contentReference[oaicite:20]{index=20}
+  listCategories:  () => http('/categories'),
+  createCategory:  (dto) => http('/categories', { method: 'POST', body: dto }),
+  deleteCategory:  (id) => http(`/categories/${id}`, { method: 'DELETE' }),
 
   // Compras
-  myOrders: ()=> http('/api/compras/mias'),                            // :contentReference[oaicite:21]{index=21}
-  createOrder:(payload)=> http('/api/compras',{method:'POST',body:payload}), // requiere USER :contentReference[oaicite:22]{index=22}
+  myOrders:   () => http('/api/compras/mias'),
+  createOrder:(payload) => http('/api/compras', { method: 'POST', body: payload }),
 
-  // Imágenes (binario)
-  getImage: (productId, imageId)=> http(`/api/products/${productId}/images/${imageId}`), // :contentReference[oaicite:23]{index=23}
+  // Utilidad para armar URL binaria si hiciera falta en algún componente
+  getImageUrl: (productId, imageId) => `${BASE}/api/products/${productId}/images/${imageId}`,
 };
