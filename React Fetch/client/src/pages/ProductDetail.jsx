@@ -1,47 +1,61 @@
+// src/pages/ProductDetail.jsx
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useShop } from "../context/ShopContext.jsx";
 import { useRole } from "../auth/RoleContext.jsx";
 
-const API = import.meta.env.VITE_API_URL ?? "http://localhost:4002/api";
-
 export default function ProductDetail() {
   const { id } = useParams();
   const pid = Number(id);
-  const { addToCart } = useShop();
+  const { api, addToCart } = useShop();
   const { role } = useRole();
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // carga usando la API normalizada
   useEffect(() => {
     let alive = true;
     (async () => {
       try {
-        const res = await fetch(`${API}/products`);
-        const json = await res.json();
-        const data = json.data || json; // tu API envía dentro de "data"
-        const found = Array.isArray(data) ? data.find(p => p.id === pid) : null;
-        if (alive) setProduct(found ?? null);
+        const p = await api.getProduct(pid);
+        if (alive) setProduct(p || null);
       } catch (err) {
         console.error("Error cargando producto:", err);
+        if (alive) setProduct(null);
       } finally {
         if (alive) setLoading(false);
       }
     })();
-    return () => { alive = false };
-  }, [pid]);
+    return () => {
+      alive = false;
+    };
+  }, [pid, api]);
 
   if (loading) return <div className="p-6 text-stone-300">Cargando...</div>;
   if (!product) return <div className="p-6 text-stone-300">Producto no encontrado</div>;
+
+  const firstImage = product.images?.[0] || "";
+
+  const handleAdd = () => {
+    // normaliza lo que guardamos en el carrito
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      discount: product.discount || 0,
+      image: firstImage,
+      qty: 1,
+    });
+  };
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         <section>
-          {product.images?.[0] ? (
+          {firstImage ? (
             <img
-              src={product.images[0]}
+              src={firstImage}
               alt={product.name}
               className="w-full rounded-lg object-cover"
             />
@@ -70,7 +84,7 @@ export default function ProductDetail() {
           </p>
 
           <button
-            onClick={() => addToCart(product)}
+            onClick={handleAdd}
             className="mt-4 w-full rounded bg-primary px-4 py-2 font-bold text-white hover:bg-primary/90"
           >
             Agregar al carrito
