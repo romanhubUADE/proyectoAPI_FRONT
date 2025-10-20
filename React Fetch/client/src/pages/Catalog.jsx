@@ -37,8 +37,11 @@ export default function Catalog() {
           {/* Ajuste de la grilla */}
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             {products.map((p) => (
-              <ProductCard key={p.id} p={p} />
-            ))}
+  <ProductCard key={p.id} p={p} />
+))}
+{products.length === 0 && (
+  <div className="text-stone-400 mt-6">Sin productos disponibles.</div>
+)}
           </div>
         </section>
       </div>

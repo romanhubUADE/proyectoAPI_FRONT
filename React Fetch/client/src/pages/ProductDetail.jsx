@@ -1,153 +1,99 @@
-import { useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useParams, Link } from "react-router-dom";
 import { useShop } from "../context/ShopContext.jsx";
+import { useRole } from "../auth/RoleContext.jsx";
 
-const fmt = (n) =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(Number(n || 0));
+const API = import.meta.env.VITE_API_URL ?? "http://localhost:4002/api";
 
 export default function ProductDetail() {
   const { id } = useParams();
-  const { state, dispatch, priceWithDiscount } = useShop();
-  const p = state.products.find((x) => String(x.id) === id);
+  const pid = Number(id);
+  const { addToCart } = useShop();
+  const { role } = useRole();
 
-  if (!p) {
-    return (
-      <main className="mx-auto max-w-7xl p-6">
-        Producto no encontrado.
-      </main>
-    );
-  }
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const hero = p.image || p.images?.[0];
-  const thumbs = p.gallery?.length ? p.gallery : p.images?.slice(0, 3) || [];
-  const final = priceWithDiscount(p);
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch(`${API}/products`);
+        const json = await res.json();
+        const data = json.data || json; // tu API envía dentro de "data"
+        const found = Array.isArray(data) ? data.find(p => p.id === pid) : null;
+        if (alive) setProduct(found ?? null);
+      } catch (err) {
+        console.error("Error cargando producto:", err);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => { alive = false };
+  }, [pid]);
 
-return (
-  <main className="w-full py-8">
-    {/* Contenedor centrado con padding lateral */}
-    <div className="mx-auto max-w-max-w-8xl px-10 sm:px-16 lg:px-24">
-      <div className="grid gap-10 md:grid-cols-12">
-        {/* Galería (izquierda) */}
-        <section className="md:col-span-6">
-          <div className="overflow-hidden rounded-xl bg-stone-200 dark:bg-stone-800">
+  if (loading) return <div className="p-6 text-stone-300">Cargando...</div>;
+  if (!product) return <div className="p-6 text-stone-300">Producto no encontrado</div>;
+
+  return (
+    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+        <section>
+          {product.images?.[0] ? (
             <img
-              src={hero}
-              alt={p.name}
-              className="w-full object-cover"
-              style={{ aspectRatio: '5 / 3' }}
+              src={product.images[0]}
+              alt={product.name}
+              className="w-full rounded-lg object-cover"
             />
-          </div>
-
-          {!!thumbs.length && (
-            <div className="mt-4 grid grid-cols-3 gap-3">
-              {thumbs.map((g, i) => (
-                <div
-                  key={i}
-                  className="overflow-hidden rounded-lg bg-stone-200 dark:bg-stone-800"
-                >
-                  <img
-                    src={g}
-                    alt={`${p.name}-${i}`}
-                    className="h-full w-full object-cover"
-                    style={{ aspectRatio: '4 / 3' }}
-                  />
-                </div>
-              ))}
-            </div>
+          ) : (
+            <div className="h-96 w-full rounded-lg bg-stone-800" />
           )}
         </section>
 
-        {/* Información (derecha) */}
-        <aside className="md:col-span-5">
-          <h1 className="text-3xl font-bold">{p.name}</h1>
+        <section>
+          <h1 className="text-3xl font-bold text-white">{product.name}</h1>
 
-          <div className="mt-4">
-            <div className="text-2xl font-extrabold text-primary">
-              {fmt(final)}
-            </div>
-            {p.discount ? (
-              <div className="text-sm opacity-60 line-through">{fmt(p.price)}</div>
-            ) : null}
-          </div>
-
-          <div className="mt-5 flex gap-6">
-            <button
-              onClick={() => dispatch({ type: "ADD", payload: p })}
-              className="rounded-lg bg-primary px-40 py-2 font-semibold text-white hover:bg-primary/80"
+          {role === "ADMIN" && (
+            <Link
+              to={`/admin/products/${product.id}/edit`}
+              className="mt-3 inline-block rounded bg-primary/20 px-3 py-1 text-sm font-semibold text-primary hover:bg-primary/30"
             >
-              Add to Cart
-            </button>
-            <span className="self-center text-sm opacity-70">
-              {p.stock > 0 ? `${p.stock} en stock` : "Sin stock"}
-            </span>
-          </div>
+              Editar
+            </Link>
+          )}
 
-          {/* Descripción */}
-          <section className="mt-8">
-            <h2 className="mb-2 text-lg font-bold">Description</h2>
-            <p className="opacity-80">{p.short || p.description || "—"}</p>
-          </section>
+          <p className="mt-3 text-2xl font-semibold text-primary">
+            ${Number(product.price).toLocaleString()}
+          </p>
+          <p className="mt-2 text-sm text-stone-400">
+            {product.stock > 0 ? `${product.stock} en stock` : "Sin stock"}
+          </p>
 
-          {/* Especificaciones */}
-          <section className="mt-8">
-            <h2 className="mb-2 text-lg font-bold">Specifications</h2>
-            <dl className="divide-y divide-white/10 rounded-lg">
-              {[
-                  ["Top Wood", p.topWood || p.woodTop],
-                  ["Back & Sides", p.backSides || p.wood],
-                  ["Neck", p.neck],
-                  ["Fretboard", p.fretboard],
-                  ["Scale", p.scale],
-                  ["Nut Width", p.nutWidth],
-                  ["Finish", p.finish],
-                ]
-                  .filter(([, v]) => v)
-                  .map(([k, v], i) => (
-                    <div
-                      key={k}
-                      className={`grid grid-cols-2 gap-4 px-4 py-3 ${
-                        i === 0 ? "border-t border-white/10" : ""
-                      } border-b border-white/10`}
-                    >
-                      <dt className="opacity-70">{k}</dt>
-                      <dd className="text-right">{v}</dd>
-                    </div>
-                  ))}
-            </dl>
-          </section>
-        </aside>
+          <button
+            onClick={() => addToCart(product)}
+            className="mt-4 w-full rounded bg-primary px-4 py-2 font-bold text-white hover:bg-primary/90"
+          >
+            Agregar al carrito
+          </button>
 
-        {/* Reviews abajo, a todo el ancho */}
-        <section className="md:col-span-12">
-          <h2 className="mt-4 text-lg font-bold">Customer Reviews</h2>
-          <div className="mt-4 grid gap-4 rounded-lg border border-white/10 p-4 md:grid-cols-[160px,1fr]">
-            <div>
-              <div className="text-3xl font-bold">4.7</div>
-              <div className="text-sm opacity-70">based on 125 reviews</div>
-            </div>
-            <div className="space-y-2">
-              {[5, 4, 3, 2, 1].map((n, i) => (
-                <div key={n} className="flex items-center gap-3">
-                  <span className="w-6 text-sm">{n}★</span>
-                  <div className="h-2 flex-1 rounded bg-stone-700">
-                    <div
-                      className="h-2 rounded bg-amber-500"
-                      style={{ width: `${[75, 15, 6, 3, 1][i]}%` }}
-                    />
+          <h2 className="mt-8 text-xl font-bold text-white">Descripción</h2>
+          <p className="mt-2 text-stone-300">{product.description}</p>
+
+          {product.specs?.length > 0 && (
+            <>
+              <h2 className="mt-8 text-xl font-bold text-white">Especificaciones</h2>
+              <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 text-sm text-stone-300">
+                {product.specs.map((s, i) => (
+                  <div key={i} className="flex justify-between border-b border-stone-700 pb-1">
+                    <dt>{s.name}</dt>
+                    <dd className="text-stone-200">{s.value}</dd>
                   </div>
-                  <span className="w-10 text-right text-xs opacity-70">
-                    {[75, 15, 6, 3, 1][i]}%
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
+                ))}
+              </dl>
+            </>
+          )}
         </section>
       </div>
-    </div>
-  </main>
-);
+    </main>
+  );
 }

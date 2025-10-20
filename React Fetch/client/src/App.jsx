@@ -8,17 +8,16 @@ import Checkout from "./pages/Checkout.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import Account from "./pages/Account.jsx";
-import About from "./pages/About.jsx"; 
+import About from "./pages/About.jsx";
 import Footer from "./components/Footer.jsx";
 import Contact from "./pages/Contact.jsx";
 import FAQ from "./pages/FAQ.jsx";
 import Search from "./pages/Search.jsx";
 import Payment from "./pages/Payment.jsx";
 import CheckoutFinal from "./pages/CheckoutFinal.jsx";
-
-
-
-
+import ProtectedRoute from "./router/ProtectedRoute.jsx";
+import AdminProducts from "./pages/AdminProducts.jsx";
+import ProductEditor from "./pages/admin/ProductEditor.jsx"; // ← import importante
 
 export default function App() {
   return (
@@ -31,17 +30,49 @@ export default function App() {
           <Route path="/catalog" element={<Catalog />} />
           <Route path="/product/:id" element={<ProductDetail />} />
           <Route path="/cart" element={<CartPage />} />
-          <Route path="/payment" element={<Payment />} />   
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/checkout-final" element={<CheckoutFinal />} />
+          <Route path="/payment" element={<Payment />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/account" element={<Account />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/faq" element={<FAQ />} />
+          <Route path="/search" element={<Search />} />
+          <Route
+            path="/checkout"
+            element={
+              <ProtectedRoute>
+                <Checkout />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/checkout-final" element={<CheckoutFinal />} />
+          <Route
+            path="/account"
+            element={
+              <ProtectedRoute>
+                <Account />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Rutas admin */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute role="ADMIN">
+                <AdminProducts />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/products/:id/edit"
+            element={
+              <ProtectedRoute role="ADMIN">
+                <ProductEditor />
+              </ProtectedRoute>
+            }
+          />
+
           <Route path="*" element={<Navigate to="/" replace />} />
-           <Route path="/search" element={<Search />} />
-        
         </Routes>
       </div>
       <Footer />

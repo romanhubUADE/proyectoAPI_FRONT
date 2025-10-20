@@ -30,7 +30,7 @@ export default function ProductCard({ p }) {
           to={`/product/${p.id}`}
           className="mt-2 inline-flex w-full items-center justify-center rounded-lg bg-amber-600 px-4 py-2 text-[12px] font-semibold text-white hover:bg-amber-500"
         >
-          Añadir al carrito
+          Ver producto
         </Link>
       </div>
     </article>
