@@ -1,34 +1,47 @@
-const BASE = import.meta.env.VITE_API_URL; // Debe ser: http://localhost:4002/api
+const BASE = import.meta.env.VITE_API_URL;
 
 function authHeader() {
-  const t = localStorage.getItem('token');
+  const t = localStorage.getItem("token");
   return t ? { Authorization: `Bearer ${t}` } : {};
 }
 
-async function http(path, { method = 'GET', body, headers } = {}) {
+async function http(path, { method = "GET", body, headers } = {}) {
   const res = await fetch(`${BASE}${path}`, {
     method,
     headers: {
-      ...(body ? { 'Content-Type': 'application/json' } : {}),
+      ...(body ? { "Content-Type": "application/json" } : {}),
       ...authHeader(),
       ...headers,
     },
     body: body ? JSON.stringify(body) : undefined,
   });
 
-  const ct = res.headers.get('content-type') || '';
-  const data = ct.includes('application/json') ? await res.json() : await res.text();
+  // Leer una sola vez
+  const raw = await res.text();
 
-  if (!res.ok) {
-    throw new Error(
-      typeof data === 'string'
-        ? data
-        : data?.message || `${res.status} ${res.statusText}`
-    );
+  // Intentar JSON desde el texto
+  let data = null;
+  try {
+    data = raw ? JSON.parse(raw) : null;
+  } catch {
+    /* no es JSON */
   }
 
-  return data;
+  if (!res.ok) {
+    const err = new Error(
+      (data && (data.message || data.error)) || raw || `${res.status} ${res.statusText}`
+    );
+    err.status = res.status;
+    err.body = data ?? raw;   // útil para el catch del frontend
+    throw err;
+  }
+
+  // devolver JSON si hay, si no, texto
+  return data ?? raw;
 }
+
+export { http };
+
 
 // --- Normalizadores ---
 const normalizeImage = (prodId) => (img) =>
