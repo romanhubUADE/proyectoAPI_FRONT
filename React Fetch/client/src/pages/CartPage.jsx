@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useShop } from "../context/ShopContext.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
 
 const fmt = (n) =>
   new Intl.NumberFormat("es-AR", {
@@ -10,24 +11,33 @@ const fmt = (n) =>
 
 export default function CartPage() {
   const { state, dispatch, priceWithDiscount } = useShop();
+  const { isAuth } = useAuth();
   const nav = useNavigate();
 
   const items = state.cart ?? [];
-  const subtotal = items.reduce((t, i) => t + priceWithDiscount(i) * i.qty, 0);
+  const subtotal = items.reduce((t, i) => t + priceWithDiscount(i) * (i.qty || 1), 0);
   const setQty = (id, qty) =>
     dispatch({ type: "SET_QTY", payload: { id, qty: Math.max(1, qty | 0) } });
 
-  // ---- helper: obtiene imagen confiable para cada item ----
+  // imagen confiable por item
   const getItemImage = (item) => {
-    const prod =
-      state.products?.find((p) => String(p.id) === String(item.id)) || null;
+    const prod = state.products?.find((p) => String(p.id) === String(item.id)) || null;
     return (
       item.image ||
       item.images?.[0] ||
       prod?.image ||
       prod?.images?.[0] ||
-      "" // poné aquí un placeholder si querés, ej: "/img/placeholder.jpg"
+      ""
     );
+  };
+
+  const handleCheckout = () => {
+    if (!items.length) return;
+    if (!isAuth) {
+      nav("/login?next=/checkout");
+      return;
+    }
+    nav("/checkout");
   };
 
   return (
@@ -42,9 +52,9 @@ export default function CartPage() {
 
         <h1 className="mt-2 text-4xl font-extrabold">Carrito de compras</h1>
 
-        {/* ===== Layout principal en 12 columnas ===== */}
+        {/* Layout principal */}
         <div className="mt-10 grid gap-8 lg:[grid-template-columns:minmax(0,1fr)_360px]">
-          {/* LISTA (izquierda) */}
+          {/* LISTA */}
           <aside className="lg:col-start-1 lg:row-start-1 lg:sticky lg:top-24 h-max bg-transparent border-none rounded-none p-0">
             <section className="lg:col-span-8">
               {items.length ? (
@@ -77,21 +87,19 @@ export default function CartPage() {
 
                             <div className="mt-1 flex items-center gap-3">
                               <button
-                                onClick={() => setQty(i.id, i.qty - 1)}
+                                onClick={() => setQty(i.id, (i.qty || 1) - 1)}
                                 className="flex items-center justify-center h-8 w-8 rounded-full ring-1 ring-primary/30 hover:bg-primary/20"
                                 aria-label="disminuir"
                               >
                                 −
                               </button>
                               <input
-                                value={i.qty}
-                                onChange={(e) =>
-                                  setQty(i.id, Number(e.target.value))
-                                }
+                                value={i.qty || 1}
+                                onChange={(e) => setQty(i.id, Number(e.target.value))}
                                 className="w-12 rounded-md border border-primary/20 bg-transparent p-1 text-center"
                               />
                               <button
-                                onClick={() => setQty(i.id, i.qty + 1)}
+                                onClick={() => setQty(i.id, (i.qty || 1) + 1)}
                                 className="flex items-center justify-center h-8 w-8 rounded-full ring-1 ring-primary/30 hover:bg-primary/20"
                                 aria-label="aumentar"
                               >
@@ -99,9 +107,7 @@ export default function CartPage() {
                               </button>
 
                               <button
-                                onClick={() =>
-                                  dispatch({ type: "REMOVE", payload: i.id })
-                                }
+                                onClick={() => dispatch({ type: "REMOVE", payload: i.id })}
                                 className="ml-3 text-sm text-stone-400 hover:text-primary"
                               >
                                 Quitar
@@ -110,7 +116,7 @@ export default function CartPage() {
                           </div>
 
                           <p className="text-right text-lg font-semibold">
-                            {fmt(priceWithDiscount(i) * i.qty)}
+                            {fmt(priceWithDiscount(i) * (i.qty || 1))}
                           </p>
                         </div>
                       </li>
@@ -128,7 +134,7 @@ export default function CartPage() {
             </section>
           </aside>
 
-          {/* RESUMEN (derecha) */}
+          {/* RESUMEN */}
           <aside className="lg:col-start-2 lg:row-start-1 lg:sticky lg:top-24 h-max rounded-xl border border-primary/20 bg-primary/5 p-6">
             <h2 className="mb-4 text-lg font-bold">Resumen del pedido</h2>
 
@@ -156,7 +162,7 @@ export default function CartPage() {
 
             <button
               disabled={!items.length}
-              onClick={() => nav("/checkout")}
+              onClick={handleCheckout}
               className="mt-6 w-full rounded-lg bg-primary py-3 text-sm font-bold text-white shadow-lg shadow-primary/20 transition hover:brightness-105 disabled:opacity-50"
             >
               Continuar al pago

@@ -1,6 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useShop } from "../context/ShopContext.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
+import { api } from "../lib/api.js";
 
 const fmt = (n) =>
   new Intl.NumberFormat("es-AR", {
@@ -11,7 +13,11 @@ const fmt = (n) =>
 
 export default function CheckoutFinal() {
   const { state, dispatch, priceWithDiscount } = useShop();
+  const { isAuth } = useAuth();
   const nav = useNavigate();
+
+  const [submitting, setSubmitting] = useState(false);
+  const [err, setErr] = useState("");
 
   const items = state.cart ?? [];
   const subtotal = useMemo(
@@ -44,31 +50,60 @@ export default function CheckoutFinal() {
           last4 ? ` terminada en ${last4}` : ""
         }`;
 
-  const onConfirm = () => {
-    dispatch({ type: "CLEAR" });
-    // limpia persistencia
-    localStorage.removeItem("payment.method");
-    localStorage.removeItem("payment.last4");
-    sessionStorage.removeItem("checkout.store");
-    sessionStorage.removeItem("checkout.email");
-    sessionStorage.removeItem("checkout.name");
-    sessionStorage.removeItem("checkout.last");
-    
-    // muestra mensaje de confirmación
-    Swal.fire({
-      title: '¡Compra realizada!',
-      text: 'Tu pedido fue confirmado con éxito.',
-      icon: 'success',
-      confirmButtonText: 'Aceptar',
-      confirmButtonColor: '#b86614', // tu color principal
-      background: '#2c1f13ff',         // fondo oscuro
-      color: '#f8f7f6',              // texto claro
-      backdrop: 'rgba(0,0,0,0.6)',   // oscurece el fondo detrás del modal
+  const onConfirm = async () => {
+    setErr("");
 
-    }).then(() => {
-      // redirige al menú principal una vez cerrado
-      nav("/");
-    });
+    if (!isAuth) {
+      nav("/login?next=/checkout/final");
+      return;
+    }
+
+    const payload = {
+      items: items.map((it) => ({
+        productId: it.id,
+        quantity: it.qty || 1,
+      })),
+    };
+
+    if (!payload.items.length) {
+      setErr("El carrito está vacío.");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      // Crea la compra en el backend (requiere token)
+      await api.createOrder(payload);
+
+      // Limpia estado y persistencias SOLO si la compra fue creada
+      dispatch({ type: "CLEAR" });
+      localStorage.removeItem("payment.method");
+      localStorage.removeItem("payment.last4");
+      sessionStorage.removeItem("checkout.store");
+      sessionStorage.removeItem("checkout.email");
+      sessionStorage.removeItem("checkout.name");
+      sessionStorage.removeItem("checkout.last");
+
+      // Feedback y redirección
+      // Nota: asumimos que Swal está disponible como global si ya lo usabas.
+      if (typeof Swal !== "undefined") {
+        await Swal.fire({
+          title: "¡Compra realizada!",
+          text: "Tu pedido fue confirmado con éxito.",
+          icon: "success",
+          confirmButtonText: "Aceptar",
+          confirmButtonColor: "#b86614",
+          background: "#2c1f13ff",
+          color: "#f8f7f6",
+          backdrop: "rgba(0,0,0,0.6)",
+        });
+      }
+      nav("/account");
+    } catch (e) {
+      setErr(e?.message || "No se pudo confirmar la compra.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -176,11 +211,18 @@ export default function CheckoutFinal() {
                 </div>
               </div>
 
+              {err && (
+                <p className="rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+                  {err}
+                </p>
+              )}
+
               <button
                 onClick={onConfirm}
-                className="w-full rounded-lg bg-primary py-3 text-sm font-bold text-white hover:bg-primary/90"
+                disabled={submitting}
+                className="w-full rounded-lg bg-primary py-3 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-60"
               >
-                Confirmar pedido
+                {submitting ? "Procesando..." : "Confirmar pedido"}
               </button>
             </section>
           </aside>

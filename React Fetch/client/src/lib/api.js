@@ -60,8 +60,16 @@ export const api = {
   createCategory:  (dto) => http('/categories', { method: 'POST', body: dto }),
   deleteCategory:  (id) => http(`/categories/${id}`, { method: 'DELETE' }),
 
-  // Compras
-  myOrders:   () => http('/api/compras/mias'),
+  // solo agrega/ajusta esta función:
+  myOrders: async () => {
+  const r = await http('/api/compras/mias'); // requiere token
+  // normaliza a []
+  if (Array.isArray(r)) return r;
+  if (Array.isArray(r?.data)) return r.data;
+  if (Array.isArray(r?.content)) return r.content;
+  return [];
+  },
+
   createOrder:(payload) => http('/api/compras', { method: 'POST', body: payload }),
 
   // Utilidad para armar URL binaria si hiciera falta en algún componente
