@@ -2,15 +2,12 @@ import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useShop } from "../context/ShopContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
-import { useRole } from "../auth/RoleContext.jsx";     // ← nuevo
-import RoleToggle from "../auth/RoleToggle.jsx";        // ← nuevo
 
 export default function NavBar() {
   const [query, setQuery] = useState("");
   const navigate = useNavigate();
   const { state } = useShop();
   const { isAuth, user, logout } = useAuth();
-  const { role } = useRole();                           // ← leemos rol
 
   const count = (state?.cart ?? []).reduce((n, it) => n + (it.qty ?? it.quantity ?? 1), 0);
 
@@ -41,13 +38,7 @@ export default function NavBar() {
           <Link to="/catalog?cat=electric" className="text-sm font-medium text-white hover:text-primary">Electric</Link>
           <Link to="/catalog?cat=acoustic" className="text-sm font-medium text-white hover:text-primary">Acoustic</Link>
           <Link to="/catalog?cat=bass" className="text-sm font-medium text-white hover:text-primary">Bass</Link>
-
-          {/* Link de administración visible solo con rol ADMIN */}
-          {role === "ADMIN" && (
-            <Link to="/admin" className="text-sm font-semibold text-primary">
-              Admin
-            </Link>
-          )}
+          {/* ya no mostramos botón Admin ni toggle de rol */}
         </nav>
 
         <div className="flex items-center gap-3">
@@ -107,9 +98,6 @@ export default function NavBar() {
               </button>
             </>
           )}
-
-          {/* ← Botón para alternar rol */}
-          <RoleToggle />
         </div>
       </div>
     </header>

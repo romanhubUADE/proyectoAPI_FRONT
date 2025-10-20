@@ -55,14 +55,7 @@ export default function App() {
           />
 
           {/* Rutas admin */}
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute role="ADMIN">
-                <AdminProducts />
-              </ProtectedRoute>
-            }
-          />
+          
           <Route
             path="/admin/products/:id/edit"
             element={
@@ -71,6 +64,7 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

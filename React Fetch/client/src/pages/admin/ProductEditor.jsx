@@ -1,18 +1,23 @@
 // src/pages/admin/ProductEditor.jsx
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useRole } from "../../auth/RoleContext.jsx";
+import { useShop } from "../../context/ShopContext.jsx";
+import { useAuth } from "../../context/AuthContext.jsx";
 
-const BASE = import.meta.env.VITE_API_URL; // ej: http://localhost:4002/api
+const BASE = import.meta.env.VITE_API_URL ?? "http://localhost:4002/api";
 const emptySpec = () => ({ name: "", value: "" });
 
 export default function ProductEditor() {
-  const { id } = useParams();
+  const { id } = useParams();                 // numérico
   const navigate = useNavigate();
-  const { role } = useRole();
+  const { api } = useShop();
+  const { isAdmin, token } = useAuth();       // usar JWT real
+
+  // bloquea si no es ADMIN (no uses RoleContext aquí)
+  if (!isAdmin) return null;
 
   const [loading, setLoading] = useState(true);
-  const [images, setImages] = useState([]); // [{url, file?}]
+  const [images, setImages] = useState([]);   // [{url} | {file, url}]
   const [name, setName] = useState("");
   const [shortDesc, setShortDesc] = useState("");
   const [price, setPrice] = useState("");
@@ -20,14 +25,12 @@ export default function ProductEditor() {
   const [longDesc, setLongDesc] = useState("");
   const [specs, setSpecs] = useState([emptySpec()]);
 
+  // carga producto
   useEffect(() => {
     let alive = true;
     (async () => {
       try {
-        const r = await fetch(`${BASE}/products/${id}`);
-        if (!r.ok) throw new Error("No se pudo cargar el producto");
-        const p = await r.json();
-
+        const p = await api.getProduct(id); // GET /api/products/:id
         if (!alive) return;
         setName(p.name ?? "");
         setShortDesc(p.description ?? "");
@@ -37,23 +40,19 @@ export default function ProductEditor() {
         setSpecs(
           (p.specs ?? []).map(s => ({ name: s.name, value: s.value })) || [emptySpec()]
         );
-        // si backend entrega ids, podés mapear a URL binaria así:
-        // setImages((p.images ?? []).map(img => ({ url: `${BASE}/products/${id}/images/${img.id}` })));
-        setImages((p.images ?? []).map(u => ({ url: u })));
+        // normaliza imagenes a {url}
+        const imgs = Array.isArray(p.images) ? p.images : [];
+        setImages(imgs.map(u => ({ url: typeof u === "string" ? u : u?.url })));
       } catch (e) {
         console.error(e);
-        alert("Error cargando producto");
+        alert("No se pudo cargar el producto");
         navigate("/admin");
-        return;
       } finally {
         if (alive) setLoading(false);
       }
     })();
     return () => { alive = false; };
-  }, [id, navigate]);
-
-  if (role !== "ADMIN") return null;
-  if (loading) return <main className="p-8">Cargando…</main>;
+  }, [id, api, navigate]);
 
   const handleAddSpec = () => setSpecs(a => [...a, emptySpec()]);
   const handleSpecChange = (i, key, val) =>
@@ -61,66 +60,72 @@ export default function ProductEditor() {
   const handleRemoveSpec = (i) => setSpecs(a => a.filter((_, idx) => idx !== i));
 
   const handleAddImages = (files) => {
-    const list = Array.from(files).slice(0, 6 - images.length);
+    const list = Array.from(files).slice(0, Math.max(0, 6 - images.length));
     const mapped = list.map(f => ({ file: f, url: URL.createObjectURL(f) }));
     setImages(prev => [...prev, ...mapped]);
   };
-  const handleRemoveImage = (i) =>
-    setImages(prev => prev.filter((_, idx) => idx !== i));
+  const handleRemoveImage = (i) => setImages(prev => prev.filter((_, idx) => idx !== i));
 
   const payload = () => ({
     name,
     description: shortDesc,
     longDescription: longDesc,
-    price: Number(price),
-    stock: Number(stock),
+    price: Number(price) || 0,
+    stock: Number(stock) || 0,
     specs: specs.filter(s => s.name || s.value),
   });
 
+  // guardar
   const save = async () => {
-    // 1) datos del producto
-    const r = await fetch(`${BASE}/products/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload()),
-    });
-    if (!r.ok) return alert("Error al guardar");
+    try {
+      // 1) datos (PATCH con Bearer)
+      await api.patchProduct(id, payload());
 
-    // 2) imágenes nuevas
-    const form = new FormData();
-    images.forEach(im => { if (im.file) form.append("files", im.file); });
-    if ([...form.keys()].length) {
-      const up = await fetch(`${BASE}/products/${id}/images`, {
-        method: "POST",
-        body: form,
-      });
-      if (!up.ok) return alert("Error subiendo imágenes");
+      // 2) imágenes nuevas -> tu backend /api/products/{id}/images espera "file" UNA por request
+      const newFiles = images.filter(im => im.file);
+      for (const im of newFiles) {
+        const fd = new FormData();
+        fd.append("file", im.file); // clave correcta
+        const res = await fetch(`${BASE}/products/${id}/images`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: fd,
+        });
+        if (!res.ok) throw new Error("Error subiendo imágenes");
+      }
+
+      alert("Guardado");
+      navigate("/admin");
+    } catch (e) {
+      console.error(e);
+      alert(e.message || "Error al guardar");
     }
-
-    alert("Guardado");
-    navigate("/admin");
   };
 
   const del = async () => {
     if (!confirm("¿Eliminar producto?")) return;
-    const r = await fetch(`${BASE}/products/${id}`, { method: "DELETE" });
-    if (!r.ok) return alert("No se pudo eliminar");
-    navigate("/admin");
+    try {
+      await api.deleteProduct(id); // DELETE con Bearer
+      navigate("/admin");
+    } catch {
+      alert("No se pudo eliminar");
+    }
   };
+
+  if (loading) return <main className="p-8 text-stone-300">Cargando…</main>;
 
   return (
     <main className="mx-auto max-w-7xl px-6 py-10">
-      {/* Breadcrumb */}
+      {/* migas */}
       <div className="mb-6 text-sm text-stone-400">
-        <button onClick={() => navigate(-1)} className="hover:text-primary">Acoustic Guitars</button>
+        <button onClick={() => navigate(-1)} className="hover:text-primary">Volver</button>
         <span className="mx-2">/</span>
-        <span className="text-stone-200">Edit Product</span>
+        <span className="text-stone-200">Editar producto</span>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-2">
-        {/* LEFT: images grid */}
+        {/* Imágenes */}
         <section>
-          {/* main image */}
           <div className="relative aspect-[16/11] w-full overflow-hidden rounded-xl bg-stone-800">
             {images[0] ? (
               <img src={images[0].url} className="h-full w-full object-cover" />
@@ -135,7 +140,6 @@ export default function ProductEditor() {
             />
           </div>
 
-          {/* two thumbs */}
           <div className="mt-4 grid grid-cols-2 gap-4">
             {[images[1], images[2]].map((im, i) => (
               <div key={i} className="relative aspect-[4/3] overflow-hidden rounded-xl bg-stone-800">
@@ -156,14 +160,13 @@ export default function ProductEditor() {
             ))}
           </div>
 
-          {/* Add Image dashed */}
           <label className="mt-6 flex h-28 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-amber-600/50 text-amber-400 hover:bg-amber-600/5">
-            Add Image
+            Agregar imágenes
             <input multiple accept="image/*" type="file" className="hidden" onChange={(e) => handleAddImages(e.target.files)} />
           </label>
         </section>
 
-        {/* RIGHT: form */}
+        {/* Formulario */}
         <section>
           <input
             className="w-full rounded-lg border border-stone-700 bg-stone-900 px-4 py-3 text-3xl font-bold text-stone-100 focus:border-amber-600 focus:outline-none"
@@ -201,17 +204,17 @@ export default function ProductEditor() {
               onClick={save}
               className="flex-1 rounded-lg bg-amber-600 px-6 py-3 text-sm font-semibold text-white hover:bg-amber-500"
             >
-              Save Product
+              Guardar
             </button>
             <button
               onClick={del}
               className="flex-1 rounded-lg bg-red-700/25 px-6 py-3 text-sm font-semibold text-red-300 hover:bg-red-700/35"
             >
-              Delete Product
+              Eliminar
             </button>
           </div>
 
-          <h3 className="mt-8 text-lg font-semibold text-stone-200">Description</h3>
+          <h3 className="mt-8 text-lg font-semibold text-stone-200">Descripción</h3>
           <textarea
             rows={8}
             className="mt-3 w-full rounded-lg border border-stone-700 bg-stone-900 px-4 py-3 text-sm text-stone-300 focus:border-amber-600 focus:outline-none"
@@ -219,7 +222,7 @@ export default function ProductEditor() {
             onChange={(e) => setLongDesc(e.target.value)}
           />
 
-          <h3 className="mt-8 text-lg font-semibold text-stone-200">Specifications</h3>
+          <h3 className="mt-8 text-lg font-semibold text-stone-200">Especificaciones</h3>
           <div className="mt-4 space-y-3">
             {specs.map((s, i) => (
               <div key={i} className="grid grid-cols-2 gap-4">
@@ -237,7 +240,7 @@ export default function ProductEditor() {
                     placeholder="Solid Spruce"
                   />
                   <button
-                    onClick={() => handleRemoveSpec(i)}
+                    onClick={() => setSpecs(a => a.filter((_, idx) => idx !== i))}
                     className="rounded-lg bg-stone-700 px-3 py-2 text-xs text-white hover:bg-stone-600"
                   >
                     X
@@ -251,7 +254,7 @@ export default function ProductEditor() {
             onClick={handleAddSpec}
             className="mt-4 w-full rounded-lg border-2 border-dashed border-amber-600/50 py-2 text-sm font-semibold text-amber-400 hover:bg-amber-600/5"
           >
-            Add Specification
+            Agregar especificación
           </button>
         </section>
       </div>

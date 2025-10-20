@@ -2,18 +2,30 @@
 import { createContext, useContext, useEffect, useMemo, useReducer } from "react";
 import { api } from "../lib/api";
 
-// precio final con descuento
+// Util: precio final con descuento
 const priceWithDiscount = (p) =>
-  Math.round((Number(p.price) || 0) * (1 - (Number(p.discount) || 0) / 100));
+  Math.round((Number(p?.price) || 0) * (1 - (Number(p?.discount) || 0) / 100));
 
 const ShopCtx = createContext(null);
 
 const initial = {
   products: [],
   filters: { q: "", cat: "all", min: 0, max: 99999 },
-  cart: [], // {id,name,price,discount,qty,image?}
+  cart: [],                // {id,name,price,discount,qty}
   status: "idle",
   error: null,
+  // para animaciones (badge que rebota al agregar)
+  lastAddedId: null,
+  lastAddedAt: 0,
+};
+
+// normalizador seguro por si el backend envía distintos envoltorios
+const toArray = (data) => {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.content)) return data.content;
+  if (Array.isArray(data?.items)) return data.items;
+  return [];
 };
 
 function reducer(state, action) {
@@ -27,20 +39,25 @@ function reducer(state, action) {
     case "ADD": {
       const p = action.payload;
       const i = state.cart.find((x) => x.id === p.id);
-      const base = {
-        id: p.id,
-        name: p.name ?? "",
-        price: Number(p.price) || 0,
-        discount: Number(p.discount) || 0,
-        image: p.image ?? "", // opcional para mostrar en el mini-carrito
-      };
+      const nextCart = i
+        ? state.cart.map((x) =>
+            x.id === p.id ? { ...x, qty: (x.qty || 1) + 1 } : x
+          )
+        : [
+            ...state.cart,
+            {
+              id: p.id,
+              name: p.name,
+              price: p.price,
+              discount: p.discount || 0,
+              qty: 1,
+            },
+          ];
       return {
         ...state,
-        cart: i
-          ? state.cart.map((x) =>
-              x.id === p.id ? { ...x, qty: (x.qty || 1) + (p.qty || 1) } : x
-            )
-          : [...state.cart, { ...base, qty: p.qty || 1 }],
+        cart: nextCart,
+        lastAddedId: p.id,
+        lastAddedAt: Date.now(),
       };
     }
 
@@ -51,9 +68,7 @@ function reducer(state, action) {
       return {
         ...state,
         cart: state.cart.map((i) =>
-          i.id === action.payload.id
-            ? { ...i, qty: Math.max(1, Number(action.payload.qty) || 1) }
-            : i
+          i.id === action.payload.id ? { ...i, qty: action.payload.qty || 1 } : i
         ),
       };
 
@@ -61,7 +76,11 @@ function reducer(state, action) {
       return { ...state, cart: [] };
 
     case "STATUS":
-      return { ...state, status: action.payload.status, error: action.payload.error || null };
+      return {
+        ...state,
+        status: action.payload.status,
+        error: action.payload.error || null,
+      };
 
     default:
       return state;
@@ -71,15 +90,16 @@ function reducer(state, action) {
 export function ShopProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initial);
 
-  // cargar productos
+  // Carga de productos
   useEffect(() => {
     let alive = true;
     (async () => {
       dispatch({ type: "STATUS", payload: { status: "loading" } });
       try {
-        const list = await api.listProducts(); // ya viene normalizado
+        const raw = await api.listProducts();
+        const list = toArray(raw);
         if (!alive) return;
-        dispatch({ type: "SET_PRODUCTS", payload: Array.isArray(list) ? list : [] });
+        dispatch({ type: "SET_PRODUCTS", payload: list });
         dispatch({ type: "STATUS", payload: { status: "ready" } });
       } catch (e) {
         if (!alive) return;
@@ -96,13 +116,15 @@ export function ShopProvider({ children }) {
     };
   }, []);
 
+  // Siempre array
   const products = Array.isArray(state.products) ? state.products : [];
 
+  // Filtros del catálogo
   const filtered = useMemo(() => {
     const { q, cat, min, max } = state.filters;
     const qlc = (q || "").toLowerCase();
     return products
-      .filter((p) => (Number(p?.stock) || 0) > 0)
+      .filter((p) => (Number(p?.stock) || 0) > 0) // ocultar sin stock
       .filter(
         (p) =>
           cat === "all" ||
@@ -117,6 +139,7 @@ export function ShopProvider({ children }) {
       });
   }, [products, state.filters]);
 
+  // Total del carrito
   const total = useMemo(
     () =>
       state.cart.reduce(
@@ -129,10 +152,10 @@ export function ShopProvider({ children }) {
     [state.cart]
   );
 
-  // helpers públicos
-  const addToCart = (item) => dispatch({ type: "ADD", payload: item });
+  // Helpers de alto nivel para componentes
+  const addToCart = (product) => dispatch({ type: "ADD", payload: product });
   const removeFromCart = (id) => dispatch({ type: "REMOVE", payload: id });
-  const setQty = (id, qty) => dispatch({ type: "SET_QTY", payload: { id, qty } });
+  const setCartQty = (id, qty) => dispatch({ type: "SET_QTY", payload: { id, qty } });
   const clearCart = () => dispatch({ type: "CLEAR" });
 
   const value = {
@@ -141,11 +164,11 @@ export function ShopProvider({ children }) {
     filtered,
     total,
     priceWithDiscount,
-    api, // para otros componentes
-    // carrito
+    api, // expuesto para vistas admin y detalle
+    // helpers
     addToCart,
     removeFromCart,
-    setQty,
+    setCartQty,
     clearCart,
   };
 
