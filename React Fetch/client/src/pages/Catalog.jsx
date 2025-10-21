@@ -3,11 +3,16 @@ import { useLocation } from "react-router-dom";
 import Filters from "../components/Filters.jsx";
 import ProductCard from "../components/ProductCard.jsx";
 import { useShop } from "../context/ShopContext.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
+import { Link } from 'react-router-dom';
+
 
 const norm = (s = "") => s.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
 const CAT = { acoustic: "acústica", electric: "eléctrica", bass: "bajo", classical: "clásica" };
 
 export default function Catalog() {
+  const { isAdmin } = useAuth(); // ← solo JWT
+
   const { state } = useShop();
   const { search } = useLocation();
   const sp = useMemo(() => new URLSearchParams(search), [search]);
@@ -32,7 +37,16 @@ export default function Catalog() {
       <div className="grid gap-8 grid-cols-[280px,1fr]">
         <Filters />
         <section>
+          {isAdmin && (
+  <Link
+    to="/account"
+    className="rounded bg-primary/20 px-3 py-1 text-sm font-semibold text-primary hover:bg-primary/30"
+  >
+    Editar
+  </Link>
+)}
           <h1 className="text-4xl font-bold text-stone-100 mb-8">{title}</h1>
+          
 
           {/* Ajuste de la grilla */}
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
@@ -43,7 +57,9 @@ export default function Catalog() {
   <div className="text-stone-400 mt-6">Sin productos disponibles.</div>
 )}
           </div>
+          
         </section>
+        
       </div>
     </main>
   );
