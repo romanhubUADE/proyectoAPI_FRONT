@@ -16,8 +16,8 @@ import Search from "./pages/Search.jsx";
 import Payment from "./pages/Payment.jsx";
 import CheckoutFinal from "./pages/CheckoutFinal.jsx";
 import ProtectedRoute from "./router/ProtectedRoute.jsx";
-import AdminProducts from "./pages/AdminProducts.jsx";
-import ProductEditor from "./pages/admin/ProductEditor.jsx"; // ← import importante
+import ProductEditor from "./pages/admin/ProductEditor.jsx";
+import EditProduct from "./pages/admin/EditProduct.jsx"; // crear/editar
 
 export default function App() {
   return (
@@ -54,8 +54,7 @@ export default function App() {
             }
           />
 
-          {/* Rutas admin */}
-          
+          {/* Admin */}
           <Route
             path="/admin/products/:id/edit"
             element={
@@ -64,7 +63,14 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-          
+          <Route
+            path="/admin/products/new"
+            element={
+              <ProtectedRoute role="ADMIN">
+                <EditProduct />
+              </ProtectedRoute>
+            }
+          />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

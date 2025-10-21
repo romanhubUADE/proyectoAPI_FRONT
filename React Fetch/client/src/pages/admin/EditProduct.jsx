@@ -1,218 +1,255 @@
-// SOLO ADMINISTRADOR
+// SOLO ADMIN. Crear ("new") o editar (/:id)
 
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useShop } from "../../context/ShopContext.jsx";
 
-const API = import.meta.env.VITE_API_URL ?? "http://localhost:4002";
+const BASE = import.meta.env.VITE_API_URL ?? "http://localhost:4002/api";
+
+const toArray = (data) => {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.content)) return data.content;
+  if (Array.isArray(data?.items)) return data.items;
+  return [];
+};
 
 export default function EditProduct() {
-  const { id } = useParams(); // "new" o un id numérico
-  const nav = useNavigate();
+  const { id } = useParams();
   const creating = useMemo(() => id === "new", [id]);
+  const nav = useNavigate();
+  const { dispatch, api } = useShop();
 
   const [loading, setLoading] = useState(!creating);
   const [saving, setSaving] = useState(false);
-  const [images, setImages] = useState([]);
-  const [specs, setSpecs] = useState([
-    { k: "Top Wood", v: "" },
-    { k: "Back & Sides Wood", v: "" },
-    { k: "Neck Wood", v: "" },
-  ]);
 
-  const [form, setForm] = useState({
-    name: "",
-    description: "",
-    price: "",
-    activo: true,
-    categoryId: "",
-  });
+  const [images, setImages] = useState([]);
+  const [name, setName] = useState("");
+  const [price, setPrice] = useState("");
+  const [categoryId, setCategoryId] = useState("");
+  const [stock, setStock] = useState("");
+  const [description, setDescription] = useState("");
+  const [longDesc, setLongDesc] = useState("");
+
+  const token = localStorage.getItem("token") || "";
 
   // Cargar producto existente
   useEffect(() => {
     if (creating) return;
+    let alive = true;
     (async () => {
-      setLoading(true);
-      const r = await fetch(`${API}/products/${id}`);
-      if (!r.ok) return nav("/admin/products");
-      const p = await r.json();
-      setForm({
-        name: p.name ?? "",
-        description: p.description ?? "",
-        price: p.price ?? "",
-        activo: p.activo ?? true,
-        categoryId: p.category?.id ?? p.category_id ?? "",
-      });
-      setImages(p.images ?? []);
-      setSpecs(
-        (p.specifications ?? []).map(s => ({ k: s.name ?? s.key, v: s.value }))
-      );
-      setLoading(false);
-    })();
-  }, [creating, id, nav]);
-
-  const onChange = e =>
-    setForm(f => ({ ...f, [e.target.name]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
-
-  const upsert = async () => {
-    setSaving(true);
-    const body = {
-      name: form.name,
-      description: form.description,
-      price: parseFloat(form.price || 0),
-      activo: !!form.activo,
-      categoryId: form.categoryId || null,
-      specifications: specs.filter(s => s.k && s.v).map(s => ({ name: s.k, value: s.v })),
-    };
-    const r = await fetch(`${API}/products${creating ? "" : `/${id}`}`, {
-      method: creating ? "POST" : "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    if (r.ok) {
-      const saved = await r.json();
-      // Subir imágenes nuevas si hay File objects en images[]
-      const files = images.filter(x => x instanceof File);
-      if (files.length) {
-        const fd = new FormData();
-        files.forEach(f => fd.append("files", f));
-        await fetch(`${API}/products/${creating ? saved.id : id}/images`, { method: "POST", body: fd });
+      try {
+        setLoading(true);
+        const r = await fetch(`${BASE}/products/${id}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!r.ok) throw new Error("No encontrado");
+        const p = await r.json();
+        if (!alive) return;
+        setName(p.name ?? "");
+        setPrice(p.price ?? "");
+        setCategory(p.category ?? "");
+        setStock(p.stock ?? "");
+        setLongDesc(p.longDescription ?? "");
+        setImages(Array.isArray(p.images) ? p.images : []);
+      } catch {
+        // silencioso
+      } finally {
+        setLoading(false);
       }
-      nav(`/admin/products/${creating ? saved.id : id}`);
+    })();
+    return () => { alive = false; };
+  }, [creating, id, token]);
+
+  const addImages = (fileList) => {
+    const files = Array.from(fileList || []);
+    setImages(prev => [...prev, ...files]);
+  };
+
+  const removeImage = (idx) => setImages(prev => prev.filter((_, i) => i !== idx));
+
+  // === BLOQUE DE GUARDADO CORRECTO ===
+  const save = async () => {
+    try {
+      setSaving(true);
+
+      if (!token) {
+        alert("Token no encontrado. Iniciá sesión como administrador.");
+        return;
+      }
+
+      // Crear producto (POST)
+      const res = await fetch(`${BASE}/products`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name,
+          description,                     // requerido por ProductCreateDTO
+          longDescription: longDesc ?? "", // si es opcional
+          categoryId: Number(categoryId),  // requerido por ProductCreateDTO
+          price: Number(price || 0),
+          stock: Number(stock || 0),
+          activo: true
+        }),
+      });
+
+      if (!res.ok) {
+        const msg = await res.text();
+        alert(`Error al crear producto (${res.status}): ${msg}`);
+        return;
+      }
+
+      const created = await res.json();
+      const prodId = created.id;
+
+      // Subir imágenes (una por request)
+      const newFiles = images.filter((im) => im instanceof File);
+      for (const file of newFiles) {
+        const fd = new FormData();
+        fd.append("file", file);
+        const up = await fetch(`${BASE}/products/${prodId}/images`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: fd,
+        });
+        if (!up.ok) {
+          const txt = await up.text();
+          console.warn(`Error subiendo imagen (${up.status}): ${txt}`);
+        }
+      }
+
+      // Refrescar catálogo
+      try {
+        const raw = await api.listProducts?.();
+        const list = toArray(raw);
+        dispatch({ type: "SET_PRODUCTS", payload: list });
+      } catch {}
+
+      alert("Producto creado con éxito");
+      nav("/catalog", { replace: true });
+    } catch (err) {
+      console.error(err);
+      alert("Error al guardar producto: " + err.message);
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
+  // === FIN BLOQUE ===
 
-  const del = async () => {
-    if (creating) return;
-    if (!confirm("Eliminar producto?")) return;
-    const r = await fetch(`${API}/products/${id}`, { method: "DELETE" });
-    if (r.ok) nav("/admin/products");
-  };
-
-  if (loading) return <div className="p-6">Cargando…</div>;
+  if (loading) return <main className="p-6 text-stone-300">Cargando…</main>;
 
   return (
-    <div className="max-w-6xl mx-auto p-4 grid lg:grid-cols-2 gap-6">
-      {/* Galería */}
-      <section>
-        <div className="aspect-video rounded-lg overflow-hidden bg-stone-900/30 grid place-items-center">
-          {images[0] && !(images[0] instanceof File) ? (
-            <img src={images[0].url ?? images[0]} alt="" className="h-full w-full object-cover" />
-          ) : images[0] ? (
-            <img src={URL.createObjectURL(images[0])} className="h-full w-full object-cover" />
-          ) : (
-            <span className="text-stone-400">Sin imagen</span>
-          )}
-        </div>
+    <main className="mx-auto max-w-7xl px-6 py-10">
+      <div className="mb-6 text-sm text-stone-400">
+        Catálogo <span className="mx-2">/</span>
+        <span className="text-stone-200">{creating ? "Nuevo producto" : "Editar producto"}</span>
+      </div>
 
-        <div className="mt-3 grid grid-cols-3 gap-3">
-          {images.slice(0, 3).map((img, i) => (
-            <div key={i} className="aspect-video rounded overflow-hidden bg-stone-900/30">
-              {img instanceof File ? (
-                <img src={URL.createObjectURL(img)} className="h-full w-full object-cover" />
-              ) : (
-                <img src={img.url ?? img} className="h-full w-full object-cover" />
-              )}
-            </div>
-          ))}
-        </div>
+      <div className="grid gap-8 lg:grid-cols-2">
+        {/* Imágenes */}
+        <section>
+          <div className="relative w-full overflow-hidden rounded-xl bg-stone-800" style={{ aspectRatio: "16/11" }}>
+            {images[0]
+              ? (
+                images[0] instanceof File
+                  ? <img src={URL.createObjectURL(images[0])} className="h-full w-full object-cover" />
+                  : <img src={typeof images[0] === "string" ? images[0] : images[0].url} className="h-full w-full object-cover" />
+              )
+              : <div className="flex h-full items-center justify-center text-stone-500">Sin imagen</div>
+            }
+            <input
+              type="file"
+              accept="image/*"
+              className="absolute inset-0 cursor-pointer opacity-0"
+              onChange={(e) => addImages(e.target.files)}
+            />
+          </div>
 
-        <label className="mt-4 block border-2 border-dashed rounded-lg py-4 text-center cursor-pointer">
-          <input
-            type="file"
-            multiple
-            accept="image/*"
-            className="hidden"
-            onChange={e => setImages(prev => [...prev, ...Array.from(e.target.files || [])])}
-          />
-          Añadir imágenes
-        </label>
-      </section>
-
-      {/* Formulario */}
-      <section className="space-y-3">
-        <input
-          name="name"
-          value={form.name}
-          onChange={onChange}
-          placeholder="Nombre del producto"
-          className="w-full rounded border-stone-600 bg-transparent"
-        />
-        <textarea
-          name="description"
-          value={form.description}
-          onChange={onChange}
-          rows={5}
-          placeholder="Descripción"
-          className="w-full rounded border-stone-600 bg-transparent"
-        />
-        <input
-          name="price"
-          type="number"
-          step="0.01"
-          value={form.price}
-          onChange={onChange}
-          placeholder="Precio"
-          className="w-full rounded border-stone-600 bg-transparent"
-        />
-        <div className="flex items-center gap-3">
-          <label className="inline-flex items-center gap-2">
-            <input type="checkbox" name="activo" checked={form.activo} onChange={onChange} />
-            Activo
-          </label>
-          <input
-            name="categoryId"
-            value={form.categoryId}
-            onChange={onChange}
-            placeholder="Category ID"
-            className="rounded border-stone-600 bg-transparent"
-          />
-        </div>
-
-        <div className="pt-4">
-          <h3 className="font-semibold mb-2">Especificaciones</h3>
-          <div className="space-y-2">
-            {specs.map((s, i) => (
-              <div key={i} className="grid grid-cols-2 gap-2">
-                <input
-                  value={s.k}
-                  onChange={e => setSpecs(arr => arr.map((x, ix) => (ix === i ? { ...x, k: e.target.value } : x)))}
-                  placeholder="Nombre"
-                  className="rounded border-stone-600 bg-transparent"
-                />
-                <input
-                  value={s.v}
-                  onChange={e => setSpecs(arr => arr.map((x, ix) => (ix === i ? { ...x, v: e.target.value } : x)))}
-                  placeholder="Valor"
-                  className="rounded border-stone-600 bg-transparent"
-                />
+          <div className="mt-3 grid grid-cols-3 gap-3">
+            {images.slice(0, 3).map((img, i) => (
+              <div key={i} className="relative aspect-[4/3] overflow-hidden rounded-lg bg-stone-800">
+                {img instanceof File
+                  ? <img src={URL.createObjectURL(img)} className="h-full w-full object-cover" />
+                  : <img src={typeof img === "string" ? img : img.url} className="h-full w-full object-cover" />
+                }
+                <button
+                  onClick={() => removeImage(i)}
+                  className="absolute right-2 top-2 rounded bg-black/60 px-2 py-1 text-xs text-white"
+                >
+                  Quitar
+                </button>
               </div>
             ))}
-            <button
-              type="button"
-              onClick={() => setSpecs(s => [...s, { k: "", v: "" }])}
-              className="text-primary hover:underline"
-            >
-              + Añadir especificación
-            </button>
           </div>
-        </div>
 
-        <div className="flex gap-3 pt-4">
+          <label className="mt-6 flex h-28 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-amber-600/50 text-amber-400 hover:bg-amber-600/5">
+            Añadir imágenes
+            <input multiple accept="image/*" type="file" className="hidden" onChange={(e) => addImages(e.target.files)} />
+          </label>
+        </section>
+
+        {/* Formulario */}
+        <section>
+          <input
+            className="w-full rounded-lg border border-stone-700 bg-stone-900 px-4 py-3 text-3xl font-bold text-stone-100 focus:border-amber-600 focus:outline-none"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Nombre del producto"
+          />
+
+          <div className="mt-3 grid grid-cols-3 gap-4">
+            <input
+              type="number"
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              placeholder="Category ID"
+              className="w-full rounded-lg border border-stone-700 bg-stone-900 px-4 py-3 text-xl font-bold text-stone-200 focus:border-amber-600 focus:outline-none"
+            />
+            <textarea
+             rows={3}
+             value={description}
+             onChange={(e) => setDescription(e.target.value)}
+             placeholder="Descripción breve..."
+             className="mt-3 w-full rounded-lg border border-stone-700 bg-stone-900 px-4 py-3 text-sm text-stone-300 focus:border-amber-600 focus:outline-none"
+           />
+            <input
+              type="number"
+              step="0.01"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder="Precio"
+              className="w-full rounded-lg border border-stone-700 bg-stone-900 px-4 py-3 text-xl font-bold text-amber-400 focus:border-amber-600 focus:outline-none"
+            />
+            <input
+              type="number"
+              value={stock}
+              onChange={(e) => setStock(e.target.value)}
+              placeholder="Stock"
+              className="w-full rounded-lg border border-stone-700 bg-stone-900 px-4 py-3 text-xl font-bold text-stone-200 focus:border-amber-600 focus:outline-none"
+            />
+          </div>
+
           <button
-            onClick={upsert}
+            onClick={save}
             disabled={saving}
-            className="px-4 py-2 rounded bg-primary text-white disabled:opacity-50"
+            className="mt-5 w-full rounded-lg bg-amber-600 px-6 py-3 text-sm font-semibold text-white hover:bg-amber-500 disabled:opacity-50"
           >
-            {creating ? "Crear" : "Guardar"}
+            {creating ? "Crear producto" : "Guardar producto"}
           </button>
-          {!creating && (
-            <button onClick={del} className="px-4 py-2 rounded border border-red-600 text-red-600">
-              Eliminar
-            </button>
-          )}
-        </div>
-      </section>
-    </div>
+
+          <h3 className="mt-8 text-lg font-semibold text-stone-200">Descripción</h3>
+          <textarea
+            rows={8}
+            className="mt-3 w-full rounded-lg border border-stone-700 bg-stone-900 px-4 py-3 text-sm text-stone-300 focus:border-amber-600 focus:outline-none"
+            value={longDesc}
+            onChange={(e) => setLongDesc(e.target.value)}
+            placeholder="Descripción detallada del producto..."
+          />
+        </section>
+      </div>
+    </main>
   );
 }
