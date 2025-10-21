@@ -11,6 +11,36 @@ const fmt = (n) =>
     minimumFractionDigits: 0,
   }).format(Number(n || 0));
 
+// ---- prevalidación de stock en cliente ----
+async function checkStockBeforeOrder(items, state) {
+  const problems = [];
+  for (const it of items) {
+    // 1) intento con cache/store
+    let p = state.products?.find((x) => String(x.id) === String(it.id));
+    // 2) si no está, pido al back
+    if (!p) {
+      try {
+        p = await api.getProduct(it.id);
+      } catch {
+        // si falla el GET, no bloqueamos por esto
+      }
+    }
+    if (!p) continue;
+
+    const want = it.qty || 1;
+    const have = Number(p.stock ?? 0);
+    if (have < want) {
+      problems.push({
+        id: p.id,
+        name: p.name || `Producto ${p.id}`,
+        want,
+        have,
+      });
+    }
+  }
+  return problems;
+}
+
 export default function CheckoutFinal() {
   const { state, dispatch, priceWithDiscount } = useShop();
   const { isAuth } = useAuth();
@@ -31,7 +61,6 @@ export default function CheckoutFinal() {
   const store = sessionStorage.getItem("checkout.store") || "A confirmar en sucursal";
   const email = sessionStorage.getItem("checkout.email") || "—";
 
-  // normaliza métodos posibles
   const methodMap = {
     credit: "credit",
     debit: "debit",
@@ -42,7 +71,6 @@ export default function CheckoutFinal() {
   };
   const method = methodMap[rawMethod] || "cash";
 
-  // etiqueta final
   const methodLabel =
     method === "cash"
       ? "Efectivo al entregar"
@@ -58,6 +86,23 @@ export default function CheckoutFinal() {
       return;
     }
 
+    // 0) carrito vacío
+    if (!items.length) {
+      setErr("El carrito está vacío.");
+      return;
+    }
+
+    // 1) prevalidación de stock
+    const issues = await checkStockBeforeOrder(items, state);
+    if (issues.length) {
+      const msg = issues
+        .map((it) => `• ${it.name}: pediste ${it.want}, stock ${it.have}`)
+        .join("\n");
+      setErr(`No se pudo confirmar la compra: stock insuficiente.\n${msg}`);
+      return;
+    }
+
+    // 2) payload al back
     const payload = {
       items: items.map((it) => ({
         productId: it.id,
@@ -65,17 +110,11 @@ export default function CheckoutFinal() {
       })),
     };
 
-    if (!payload.items.length) {
-      setErr("El carrito está vacío.");
-      return;
-    }
-
     try {
       setSubmitting(true);
-      // Crea la compra en el backend (requiere token)
       await api.createOrder(payload);
 
-      // Limpia estado y persistencias SOLO si la compra fue creada
+      // éxito → limpiar
       dispatch({ type: "CLEAR" });
       localStorage.removeItem("payment.method");
       localStorage.removeItem("payment.last4");
@@ -84,8 +123,6 @@ export default function CheckoutFinal() {
       sessionStorage.removeItem("checkout.name");
       sessionStorage.removeItem("checkout.last");
 
-      // Feedback y redirección
-      // Nota: asumimos que Swal está disponible como global si ya lo usabas.
       if (typeof Swal !== "undefined") {
         await Swal.fire({
           title: "¡Compra realizada!",
@@ -100,7 +137,22 @@ export default function CheckoutFinal() {
       }
       nav("/account");
     } catch (e) {
-      setErr(e?.message || "No se pudo confirmar la compra.");
+      console.error("createOrder failed:", e?.status, e?.body || e);
+      const status = e?.status || 0;
+      const msg = (e?.body?.message || e?.message || "").toLowerCase();
+
+      // si el back igualmente mandó texto de stock, lo mostramos
+      if (msg.includes("stock") || msg.includes("insuficien")) {
+        setErr(e?.body?.message || "No se pudo confirmar la compra: stock insuficiente.");
+        return;
+      }
+
+      if (status === 401 || status === 403) {
+        setErr("Tu sesión expiró. Iniciá sesión para finalizar la compra.");
+        return;
+      }
+
+      setErr(e?.body?.message || e?.message || "No se pudo confirmar la compra.");
     } finally {
       setSubmitting(false);
     }
@@ -112,7 +164,7 @@ export default function CheckoutFinal() {
         <h1 className="text-4xl font-extrabold">Checkout</h1>
 
         <div className="mt-10 grid gap-12 lg:grid-cols-2">
-          {/* Columna izquierda: resumen de productos */}
+          {/* Columna izquierda */}
           <section>
             <h2 className="mb-4 border-b border-primary/20 pb-2 text-xl font-semibold dark:border-primary/30">
               Resumen del pedido
@@ -125,24 +177,12 @@ export default function CheckoutFinal() {
                 return (
                   <li key={it.id} className="py-4">
                     <div className="grid grid-cols-[80px,1fr,auto] items-center gap-4">
-                      <Link
-                        to={`/product/${it.id}`}
-                        className="h-20 w-20 overflow-hidden rounded-lg bg-stone-800"
-                      >
-                        {img ? (
-                          <img
-                            src={img}
-                            alt={it.name}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : null}
+                      <Link to={`/product/${it.id}`} className="h-20 w-20 overflow-hidden rounded-lg bg-stone-800">
+                        {img ? <img src={img} alt={it.name} className="h-full w-full object-cover" /> : null}
                       </Link>
 
                       <div>
-                        <Link
-                          to={`/product/${it.id}`}
-                          className="font-semibold hover:text-primary"
-                        >
+                        <Link to={`/product/${it.id}`} className="font-semibold hover:text-primary">
                           {it.name}
                         </Link>
                         <p className="text-sm text-stone-400">
@@ -150,9 +190,7 @@ export default function CheckoutFinal() {
                         </p>
                       </div>
 
-                      <div className="text-right font-semibold">
-                        {fmt(totalItem)}
-                      </div>
+                      <div className="text-right font-semibold">{fmt(totalItem)}</div>
                     </div>
                   </li>
                 );
@@ -174,14 +212,13 @@ export default function CheckoutFinal() {
               </div>
               {method === "cash" && (
                 <p className="text-sm text-amber-300/90">
-                  Recordá tener billetes en buen estado y, en lo posible, el
-                  monto justo.
+                  Recordá tener billetes en buen estado y, en lo posible, el monto justo.
                 </p>
               )}
             </div>
           </section>
 
-          {/* Columna derecha: datos de retiro + método de pago */}
+          {/* Columna derecha */}
           <aside>
             <section className="space-y-6">
               <div>
@@ -202,17 +239,14 @@ export default function CheckoutFinal() {
                 </h3>
                 <div className="flex items-center justify-between rounded-lg bg-primary/10 p-4 dark:bg-primary/20">
                   <p className="font-medium">{methodLabel}</p>
-                  <Link
-                    to="/payment"
-                    className="text-sm text-primary hover:opacity-90"
-                  >
+                  <Link to="/payment" className="text-sm text-primary hover:opacity-90">
                     Cambiar
                   </Link>
                 </div>
               </div>
 
               {err && (
-                <p className="rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+                <p className="whitespace-pre-line rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
                   {err}
                 </p>
               )}
