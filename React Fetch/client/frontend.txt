@@ -610,230 +610,266 @@ export function ShopProvider({ children }) {
 export const useShop = () => useContext(ShopCtx);
 
 ----- FILE: .\src\pages\admin\EditProduct.jsx -----
-// SOLO ADMINISTRADOR
+// SOLO ADMIN. Crear ("new") o editar (/:id)
 
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useShop } from "../../context/ShopContext.jsx";
 
-const API = import.meta.env.VITE_API_URL ?? "http://localhost:4002";
+const BASE = import.meta.env.VITE_API_URL ?? "http://localhost:4002/api";
+
+const toArray = (data) => {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.content)) return data.content;
+  if (Array.isArray(data?.items)) return data.items;
+  return [];
+};
 
 export default function EditProduct() {
-  const { id } = useParams(); // "new" o un id numÃ©rico
-  const nav = useNavigate();
+  const { id } = useParams();
   const creating = useMemo(() => id === "new", [id]);
+  const nav = useNavigate();
+  const { dispatch, api } = useShop();
 
   const [loading, setLoading] = useState(!creating);
   const [saving, setSaving] = useState(false);
-  const [images, setImages] = useState([]);
-  const [specs, setSpecs] = useState([
-    { k: "Top Wood", v: "" },
-    { k: "Back & Sides Wood", v: "" },
-    { k: "Neck Wood", v: "" },
-  ]);
 
-  const [form, setForm] = useState({
-    name: "",
-    description: "",
-    price: "",
-    activo: true,
-    categoryId: "",
-  });
+  const [images, setImages] = useState([]);
+  const [name, setName] = useState("");
+  const [price, setPrice] = useState("");
+  const [categoryId, setCategoryId] = useState("");
+  const [stock, setStock] = useState("");
+  const [description, setDescription] = useState("");
+  const [longDesc, setLongDesc] = useState("");
+
+  const token = localStorage.getItem("token") || "";
 
   // Cargar producto existente
   useEffect(() => {
     if (creating) return;
+    let alive = true;
     (async () => {
-      setLoading(true);
-      const r = await fetch(`${API}/products/${id}`);
-      if (!r.ok) return nav("/admin/products");
-      const p = await r.json();
-      setForm({
-        name: p.name ?? "",
-        description: p.description ?? "",
-        price: p.price ?? "",
-        activo: p.activo ?? true,
-        categoryId: p.category?.id ?? p.category_id ?? "",
-      });
-      setImages(p.images ?? []);
-      setSpecs(
-        (p.specifications ?? []).map(s => ({ k: s.name ?? s.key, v: s.value }))
-      );
-      setLoading(false);
-    })();
-  }, [creating, id, nav]);
-
-  const onChange = e =>
-    setForm(f => ({ ...f, [e.target.name]: e.target.type === "checkbox" ? e.target.checked : e.target.value }));
-
-  const upsert = async () => {
-    setSaving(true);
-    const body = {
-      name: form.name,
-      description: form.description,
-      price: parseFloat(form.price || 0),
-      activo: !!form.activo,
-      categoryId: form.categoryId || null,
-      specifications: specs.filter(s => s.k && s.v).map(s => ({ name: s.k, value: s.v })),
-    };
-    const r = await fetch(`${API}/products${creating ? "" : `/${id}`}`, {
-      method: creating ? "POST" : "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    if (r.ok) {
-      const saved = await r.json();
-      // Subir imÃ¡genes nuevas si hay File objects en images[]
-      const files = images.filter(x => x instanceof File);
-      if (files.length) {
-        const fd = new FormData();
-        files.forEach(f => fd.append("files", f));
-        await fetch(`${API}/products/${creating ? saved.id : id}/images`, { method: "POST", body: fd });
+      try {
+        setLoading(true);
+        const r = await fetch(`${BASE}/products/${id}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!r.ok) throw new Error("No encontrado");
+        const p = await r.json();
+        if (!alive) return;
+        setName(p.name ?? "");
+        setPrice(p.price ?? "");
+        setCategory(p.category ?? "");
+        setStock(p.stock ?? "");
+        setLongDesc(p.longDescription ?? "");
+        setImages(Array.isArray(p.images) ? p.images : []);
+      } catch {
+        // silencioso
+      } finally {
+        setLoading(false);
       }
-      nav(`/admin/products/${creating ? saved.id : id}`);
+    })();
+    return () => { alive = false; };
+  }, [creating, id, token]);
+
+  const addImages = (fileList) => {
+    const files = Array.from(fileList || []);
+    setImages(prev => [...prev, ...files]);
+  };
+
+  const removeImage = (idx) => setImages(prev => prev.filter((_, i) => i !== idx));
+
+  // === BLOQUE DE GUARDADO CORRECTO ===
+  const save = async () => {
+    try {
+      setSaving(true);
+
+      if (!token) {
+        alert("Token no encontrado. IniciÃ¡ sesiÃ³n como administrador.");
+        return;
+      }
+
+      // Crear producto (POST)
+      const res = await fetch(`${BASE}/products`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name,
+          description,                     // requerido por ProductCreateDTO
+          longDescription: longDesc ?? "", // si es opcional
+          categoryId: Number(categoryId),  // requerido por ProductCreateDTO
+          price: Number(price || 0),
+          stock: Number(stock || 0),
+          activo: true
+        }),
+      });
+
+      if (!res.ok) {
+        const msg = await res.text();
+        alert(`Error al crear producto (${res.status}): ${msg}`);
+        return;
+      }
+
+      const created = await res.json();
+      const prodId = created.id;
+
+      // Subir imÃ¡genes (una por request)
+      const newFiles = images.filter((im) => im instanceof File);
+      for (const file of newFiles) {
+        const fd = new FormData();
+        fd.append("file", file);
+        const up = await fetch(`${BASE}/products/${prodId}/images`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: fd,
+        });
+        if (!up.ok) {
+          const txt = await up.text();
+          console.warn(`Error subiendo imagen (${up.status}): ${txt}`);
+        }
+      }
+
+      // Refrescar catÃ¡logo
+      try {
+        const raw = await api.listProducts?.();
+        const list = toArray(raw);
+        dispatch({ type: "SET_PRODUCTS", payload: list });
+      } catch {}
+
+      alert("Producto creado con Ã©xito");
+      nav("/catalog", { replace: true });
+    } catch (err) {
+      console.error(err);
+      alert("Error al guardar producto: " + err.message);
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
+  // === FIN BLOQUE ===
 
-  const del = async () => {
-    if (creating) return;
-    if (!confirm("Eliminar producto?")) return;
-    const r = await fetch(`${API}/products/${id}`, { method: "DELETE" });
-    if (r.ok) nav("/admin/products");
-  };
-
-  if (loading) return <div className="p-6">Cargandoâ€¦</div>;
+  if (loading) return <main className="p-6 text-stone-300">Cargandoâ€¦</main>;
 
   return (
-    <div className="max-w-6xl mx-auto p-4 grid lg:grid-cols-2 gap-6">
-      {/* GalerÃ­a */}
-      <section>
-        <div className="aspect-video rounded-lg overflow-hidden bg-stone-900/30 grid place-items-center">
-          {images[0] && !(images[0] instanceof File) ? (
-            <img src={images[0].url ?? images[0]} alt="" className="h-full w-full object-cover" />
-          ) : images[0] ? (
-            <img src={URL.createObjectURL(images[0])} className="h-full w-full object-cover" />
-          ) : (
-            <span className="text-stone-400">Sin imagen</span>
-          )}
-        </div>
+    <main className="mx-auto max-w-7xl px-6 py-10">
+      <div className="mb-6 text-sm text-stone-400">
+        CatÃ¡logo <span className="mx-2">/</span>
+        <span className="text-stone-200">{creating ? "Nuevo producto" : "Editar producto"}</span>
+      </div>
 
-        <div className="mt-3 grid grid-cols-3 gap-3">
-          {images.slice(0, 3).map((img, i) => (
-            <div key={i} className="aspect-video rounded overflow-hidden bg-stone-900/30">
-              {img instanceof File ? (
-                <img src={URL.createObjectURL(img)} className="h-full w-full object-cover" />
-              ) : (
-                <img src={img.url ?? img} className="h-full w-full object-cover" />
-              )}
-            </div>
-          ))}
-        </div>
+      <div className="grid gap-8 lg:grid-cols-2">
+        {/* ImÃ¡genes */}
+        <section>
+          <div className="relative w-full overflow-hidden rounded-xl bg-stone-800" style={{ aspectRatio: "16/11" }}>
+            {images[0]
+              ? (
+                images[0] instanceof File
+                  ? <img src={URL.createObjectURL(images[0])} className="h-full w-full object-cover" />
+                  : <img src={typeof images[0] === "string" ? images[0] : images[0].url} className="h-full w-full object-cover" />
+              )
+              : <div className="flex h-full items-center justify-center text-stone-500">Sin imagen</div>
+            }
+            <input
+              type="file"
+              accept="image/*"
+              className="absolute inset-0 cursor-pointer opacity-0"
+              onChange={(e) => addImages(e.target.files)}
+            />
+          </div>
 
-        <label className="mt-4 block border-2 border-dashed rounded-lg py-4 text-center cursor-pointer">
-          <input
-            type="file"
-            multiple
-            accept="image/*"
-            className="hidden"
-            onChange={e => setImages(prev => [...prev, ...Array.from(e.target.files || [])])}
-          />
-          AÃ±adir imÃ¡genes
-        </label>
-      </section>
-
-      {/* Formulario */}
-      <section className="space-y-3">
-        <input
-          name="name"
-          value={form.name}
-          onChange={onChange}
-          placeholder="Nombre del producto"
-          className="w-full rounded border-stone-600 bg-transparent"
-        />
-        <textarea
-          name="description"
-          value={form.description}
-          onChange={onChange}
-          rows={5}
-          placeholder="DescripciÃ³n"
-          className="w-full rounded border-stone-600 bg-transparent"
-        />
-        <input
-          name="price"
-          type="number"
-          step="0.01"
-          value={form.price}
-          onChange={onChange}
-          placeholder="Precio"
-          className="w-full rounded border-stone-600 bg-transparent"
-        />
-        <div className="flex items-center gap-3">
-          <label className="inline-flex items-center gap-2">
-            <input type="checkbox" name="activo" checked={form.activo} onChange={onChange} />
-            Activo
-          </label>
-          <input
-            name="categoryId"
-            value={form.categoryId}
-            onChange={onChange}
-            placeholder="Category ID"
-            className="rounded border-stone-600 bg-transparent"
-          />
-        </div>
-
-        <div className="pt-4">
-          <h3 className="font-semibold mb-2">Especificaciones</h3>
-          <div className="space-y-2">
-            {specs.map((s, i) => (
-              <div key={i} className="grid grid-cols-2 gap-2">
-                <input
-                  value={s.k}
-                  onChange={e => setSpecs(arr => arr.map((x, ix) => (ix === i ? { ...x, k: e.target.value } : x)))}
-                  placeholder="Nombre"
-                  className="rounded border-stone-600 bg-transparent"
-                />
-                <input
-                  value={s.v}
-                  onChange={e => setSpecs(arr => arr.map((x, ix) => (ix === i ? { ...x, v: e.target.value } : x)))}
-                  placeholder="Valor"
-                  className="rounded border-stone-600 bg-transparent"
-                />
+          <div className="mt-3 grid grid-cols-3 gap-3">
+            {images.slice(0, 3).map((img, i) => (
+              <div key={i} className="relative aspect-[4/3] overflow-hidden rounded-lg bg-stone-800">
+                {img instanceof File
+                  ? <img src={URL.createObjectURL(img)} className="h-full w-full object-cover" />
+                  : <img src={typeof img === "string" ? img : img.url} className="h-full w-full object-cover" />
+                }
+                <button
+                  onClick={() => removeImage(i)}
+                  className="absolute right-2 top-2 rounded bg-black/60 px-2 py-1 text-xs text-white"
+                >
+                  Quitar
+                </button>
               </div>
             ))}
-            <button
-              type="button"
-              onClick={() => setSpecs(s => [...s, { k: "", v: "" }])}
-              className="text-primary hover:underline"
-            >
-              + AÃ±adir especificaciÃ³n
-            </button>
           </div>
-        </div>
 
-        <div className="flex gap-3 pt-4">
+          <label className="mt-6 flex h-28 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-amber-600/50 text-amber-400 hover:bg-amber-600/5">
+            AÃ±adir imÃ¡genes
+            <input multiple accept="image/*" type="file" className="hidden" onChange={(e) => addImages(e.target.files)} />
+          </label>
+        </section>
+
+        {/* Formulario */}
+        <section>
+          <input
+            className="w-full rounded-lg border border-stone-700 bg-stone-900 px-4 py-3 text-3xl font-bold text-stone-100 focus:border-amber-600 focus:outline-none"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Nombre del producto"
+          />
+
+          <div className="mt-3 grid grid-cols-3 gap-4">
+            <input
+              type="number"
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              placeholder="Category ID"
+              className="w-full rounded-lg border border-stone-700 bg-stone-900 px-4 py-3 text-xl font-bold text-stone-200 focus:border-amber-600 focus:outline-none"
+            />
+            <textarea
+             rows={3}
+             value={description}
+             onChange={(e) => setDescription(e.target.value)}
+             placeholder="DescripciÃ³n breve..."
+             className="mt-3 w-full rounded-lg border border-stone-700 bg-stone-900 px-4 py-3 text-sm text-stone-300 focus:border-amber-600 focus:outline-none"
+           />
+            <input
+              type="number"
+              step="0.01"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder="Precio"
+              className="w-full rounded-lg border border-stone-700 bg-stone-900 px-4 py-3 text-xl font-bold text-amber-400 focus:border-amber-600 focus:outline-none"
+            />
+            <input
+              type="number"
+              value={stock}
+              onChange={(e) => setStock(e.target.value)}
+              placeholder="Stock"
+              className="w-full rounded-lg border border-stone-700 bg-stone-900 px-4 py-3 text-xl font-bold text-stone-200 focus:border-amber-600 focus:outline-none"
+            />
+          </div>
+
           <button
-            onClick={upsert}
+            onClick={save}
             disabled={saving}
-            className="px-4 py-2 rounded bg-primary text-white disabled:opacity-50"
+            className="mt-5 w-full rounded-lg bg-amber-600 px-6 py-3 text-sm font-semibold text-white hover:bg-amber-500 disabled:opacity-50"
           >
-            {creating ? "Crear" : "Guardar"}
+            {creating ? "Crear producto" : "Guardar producto"}
           </button>
-          {!creating && (
-            <button onClick={del} className="px-4 py-2 rounded border border-red-600 text-red-600">
-              Eliminar
-            </button>
-          )}
-        </div>
-      </section>
-    </div>
+
+          <h3 className="mt-8 text-lg font-semibold text-stone-200">DescripciÃ³n</h3>
+          <textarea
+            rows={8}
+            className="mt-3 w-full rounded-lg border border-stone-700 bg-stone-900 px-4 py-3 text-sm text-stone-300 focus:border-amber-600 focus:outline-none"
+            value={longDesc}
+            onChange={(e) => setLongDesc(e.target.value)}
+            placeholder="DescripciÃ³n detallada del producto..."
+          />
+        </section>
+      </div>
+    </main>
   );
 }
 
 ----- FILE: .\src\pages\admin\ProductEditor.jsx -----
 // src/pages/admin/ProductEditor.jsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useRole } from "../../auth/RoleContext.jsx";
 import { useShop } from "../../context/ShopContext.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 
@@ -841,17 +877,16 @@ const BASE = import.meta.env.VITE_API_URL ?? "http://localhost:4002/api";
 const emptySpec = () => ({ name: "", value: "" });
 
 export default function ProductEditor() {
-  const { id } = useParams();
+  const { id } = useParams();                 // numÃ©rico
   const navigate = useNavigate();
-  const { role } = useRole();
-  const { api } = useShop();                // usa helpers con auth
-  const { token } = useAuth();              // para uploads binarios
+  const { api } = useShop();
+  const { isAdmin, token } = useAuth();       // usar JWT real
 
-  // seguridad extra
-  if (role !== "ADMIN") return null;
+  // bloquea si no es ADMIN (no uses RoleContext aquÃ­)
+  if (!isAdmin) return null;
 
   const [loading, setLoading] = useState(true);
-  const [images, setImages] = useState([]); // {url, file?}
+  const [images, setImages] = useState([]);   // [{url} | {file, url}]
   const [name, setName] = useState("");
   const [shortDesc, setShortDesc] = useState("");
   const [price, setPrice] = useState("");
@@ -859,22 +894,24 @@ export default function ProductEditor() {
   const [longDesc, setLongDesc] = useState("");
   const [specs, setSpecs] = useState([emptySpec()]);
 
-  // cargar producto
+  // carga producto
   useEffect(() => {
     let alive = true;
     (async () => {
       try {
-        const p = await api.getProduct(id);            // GET /api/products/:id
+        const p = await api.getProduct(id); // GET /api/products/:id
         if (!alive) return;
         setName(p.name ?? "");
         setShortDesc(p.description ?? "");
         setPrice(String(p.price ?? ""));
         setStock(p.stock ?? 0);
         setLongDesc(p.longDescription ?? "");
-        setSpecs((p.specs ?? []).map(s => ({ name: s.name, value: s.value })) || [emptySpec()]);
-        // normaliza imÃ¡genes a {url}
+        setSpecs(
+          (p.specs ?? []).map(s => ({ name: s.name, value: s.value })) || [emptySpec()]
+        );
+        // normaliza imagenes a {url}
         const imgs = Array.isArray(p.images) ? p.images : [];
-        setImages(imgs.map(u => ({ url: u })));
+        setImages(imgs.map(u => ({ url: typeof u === "string" ? u : u?.url })));
       } catch (e) {
         console.error(e);
         alert("No se pudo cargar el producto");
@@ -892,12 +929,11 @@ export default function ProductEditor() {
   const handleRemoveSpec = (i) => setSpecs(a => a.filter((_, idx) => idx !== i));
 
   const handleAddImages = (files) => {
-    const list = Array.from(files).slice(0, 6 - images.length);
+    const list = Array.from(files).slice(0, Math.max(0, 6 - images.length));
     const mapped = list.map(f => ({ file: f, url: URL.createObjectURL(f) }));
     setImages(prev => [...prev, ...mapped]);
   };
-  const handleRemoveImage = (i) =>
-    setImages(prev => prev.filter((_, idx) => idx !== i));
+  const handleRemoveImage = (i) => setImages(prev => prev.filter((_, idx) => idx !== i));
 
   const payload = () => ({
     name,
@@ -908,20 +944,22 @@ export default function ProductEditor() {
     specs: specs.filter(s => s.name || s.value),
   });
 
-  // guardar con AUTH
+  // guardar
   const save = async () => {
     try {
-      // 1) datos
-      await api.patchProduct(id, payload());           // PATCH /api/products/:id con Bearer
+      // 1) datos (PATCH con Bearer)
+      await api.patchProduct(id, payload());
+      
 
-      // 2) imÃ¡genes nuevas
-      const form = new FormData();
-      images.forEach(im => { if (im.file) form.append("files", im.file); });
-      if ([...form.keys()].length) {
+      // 2) imÃ¡genes nuevas -> tu backend /api/products/{id}/images espera "file" UNA por request
+      const newFiles = images.filter(im => im.file);
+      for (const im of newFiles) {
+        const fd = new FormData();
+        fd.append("file", im.file); // clave correcta
         const res = await fetch(`${BASE}/products/${id}/images`, {
           method: "POST",
-          headers: { Authorization: `Bearer ${token}` }, // â† necesario
-          body: form,
+          headers: { Authorization: `Bearer ${token}` },
+          body: fd,
         });
         if (!res.ok) throw new Error("Error subiendo imÃ¡genes");
       }
@@ -937,18 +975,18 @@ export default function ProductEditor() {
   const del = async () => {
     if (!confirm("Â¿Eliminar producto?")) return;
     try {
-      await api.deleteProduct(id);                     // DELETE /api/products/:id con Bearer
+      await api.deleteProduct(id); // DELETE con Bearer
       navigate("/admin");
-    } catch (e) {
+    } catch {
       alert("No se pudo eliminar");
     }
   };
 
   if (loading) return <main className="p-8 text-stone-300">Cargandoâ€¦</main>;
 
-  // UI
   return (
     <main className="mx-auto max-w-7xl px-6 py-10">
+      {/* migas */}
       <div className="mb-6 text-sm text-stone-400">
         <button onClick={() => navigate(-1)} className="hover:text-primary">Volver</button>
         <span className="mx-2">/</span>
@@ -1072,7 +1110,7 @@ export default function ProductEditor() {
                     placeholder="Solid Spruce"
                   />
                   <button
-                    onClick={() => handleRemoveSpec(i)}
+                    onClick={() => setSpecs(a => a.filter((_, idx) => idx !== i))}
                     className="rounded-lg bg-stone-700 px-3 py-2 text-xs text-white hover:bg-stone-600"
                   >
                     X
@@ -1693,15 +1731,17 @@ export default function CartPage() {
 
 ----- FILE: .\src\pages\Catalog.jsx -----
 import { useMemo } from "react";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import Filters from "../components/Filters.jsx";
 import ProductCard from "../components/ProductCard.jsx";
 import { useShop } from "../context/ShopContext.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
 
 const norm = (s = "") => s.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
 const CAT = { acoustic: "acÃºstica", electric: "elÃ©ctrica", bass: "bajo", classical: "clÃ¡sica" };
 
 export default function Catalog() {
+  const { isAdmin } = useAuth();
   const { state } = useShop();
   const { search } = useLocation();
   const sp = useMemo(() => new URLSearchParams(search), [search]);
@@ -1716,27 +1756,49 @@ export default function Catalog() {
     catSlug === "classical" ? "Guitarras ClÃ¡sicas" : "CatÃ¡logo";
 
   const products = useMemo(() => {
-    const list = state?.products ?? [];
+    const list = Array.isArray(state?.products) ? state.products : [];
     if (!wanted) return list;
     return list.filter((p) => norm(p.category || "").includes(wanted));
   }, [state?.products, wanted]);
 
   return (
-    <main className="mx-auto max-w-8x1 px-6 py-10">
-      <div className="grid gap-8 grid-cols-[280px,1fr]">
+    <main className="mx-auto max-w-7xl px-6 py-10">
+      <div className="grid grid-cols-[280px,1fr] gap-8">
         <Filters />
-        <section>
-          <h1 className="text-4xl font-bold text-stone-100 mb-8">{title}</h1>
 
-          {/* Ajuste de la grilla */}
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <section>
+          <h1 className="mb-8 text-4xl font-bold text-stone-100">{title}</h1>
+
+          {/* grilla igual que el mock: 3 por fila en desktop */}
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {products.map((p) => (
-  <ProductCard key={p.id} p={p} />
-))}
-{products.length === 0 && (
-  <div className="text-stone-400 mt-6">Sin productos disponibles.</div>
-)}
+              <ProductCard key={p.id} p={p} />
+            ))}
+
+            {isAdmin && (
+              <Link
+                to="/admin/products/new"
+                className="
+                  group relative block w-full
+                  rounded-xl border-2 border-dashed border-amber-600/40
+                  bg-stone-900/20 hover:border-amber-500/70 hover:bg-stone-900/30
+                  transition-colors
+                  aspect-[3/4]                        /* igual proporciÃ³n a la tarjeta de producto */
+                "
+              >
+                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-4xl leading-none text-amber-500 group-hover:text-amber-400">ï¼‹</span>
+                  <span className="mt-2 text-sm font-medium text-amber-400 group-hover:text-amber-300">
+                    AÃ±adir Guitarra
+                  </span>
+                </div>
+              </Link>
+            )}
           </div>
+
+          {products.length === 0 && (
+            <div className="mt-6 text-stone-400">Sin productos disponibles.</div>
+          )}
         </section>
       </div>
     </main>
@@ -1846,6 +1908,36 @@ const fmt = (n) =>
     minimumFractionDigits: 0,
   }).format(Number(n || 0));
 
+// ---- prevalidaciÃ³n de stock en cliente ----
+async function checkStockBeforeOrder(items, state) {
+  const problems = [];
+  for (const it of items) {
+    // 1) intento con cache/store
+    let p = state.products?.find((x) => String(x.id) === String(it.id));
+    // 2) si no estÃ¡, pido al back
+    if (!p) {
+      try {
+        p = await api.getProduct(it.id);
+      } catch {
+        // si falla el GET, no bloqueamos por esto
+      }
+    }
+    if (!p) continue;
+
+    const want = it.qty || 1;
+    const have = Number(p.stock ?? 0);
+    if (have < want) {
+      problems.push({
+        id: p.id,
+        name: p.name || `Producto ${p.id}`,
+        want,
+        have,
+      });
+    }
+  }
+  return problems;
+}
+
 export default function CheckoutFinal() {
   const { state, dispatch, priceWithDiscount } = useShop();
   const { isAuth } = useAuth();
@@ -1866,7 +1958,6 @@ export default function CheckoutFinal() {
   const store = sessionStorage.getItem("checkout.store") || "A confirmar en sucursal";
   const email = sessionStorage.getItem("checkout.email") || "â€”";
 
-  // normaliza mÃ©todos posibles
   const methodMap = {
     credit: "credit",
     debit: "debit",
@@ -1877,7 +1968,6 @@ export default function CheckoutFinal() {
   };
   const method = methodMap[rawMethod] || "cash";
 
-  // etiqueta final
   const methodLabel =
     method === "cash"
       ? "Efectivo al entregar"
@@ -1893,6 +1983,23 @@ export default function CheckoutFinal() {
       return;
     }
 
+    // 0) carrito vacÃ­o
+    if (!items.length) {
+      setErr("El carrito estÃ¡ vacÃ­o.");
+      return;
+    }
+
+    // 1) prevalidaciÃ³n de stock
+    const issues = await checkStockBeforeOrder(items, state);
+    if (issues.length) {
+      const msg = issues
+        .map((it) => `â€¢ ${it.name}: pediste ${it.want}, stock ${it.have}`)
+        .join("\n");
+      setErr(`No se pudo confirmar la compra: stock insuficiente.\n${msg}`);
+      return;
+    }
+
+    // 2) payload al back
     const payload = {
       items: items.map((it) => ({
         productId: it.id,
@@ -1900,17 +2007,11 @@ export default function CheckoutFinal() {
       })),
     };
 
-    if (!payload.items.length) {
-      setErr("El carrito estÃ¡ vacÃ­o.");
-      return;
-    }
-
     try {
       setSubmitting(true);
-      // Crea la compra en el backend (requiere token)
       await api.createOrder(payload);
 
-      // Limpia estado y persistencias SOLO si la compra fue creada
+      // Ã©xito â†’ limpiar
       dispatch({ type: "CLEAR" });
       localStorage.removeItem("payment.method");
       localStorage.removeItem("payment.last4");
@@ -1919,8 +2020,6 @@ export default function CheckoutFinal() {
       sessionStorage.removeItem("checkout.name");
       sessionStorage.removeItem("checkout.last");
 
-      // Feedback y redirecciÃ³n
-      // Nota: asumimos que Swal estÃ¡ disponible como global si ya lo usabas.
       if (typeof Swal !== "undefined") {
         await Swal.fire({
           title: "Â¡Compra realizada!",
@@ -1935,7 +2034,22 @@ export default function CheckoutFinal() {
       }
       nav("/account");
     } catch (e) {
-      setErr(e?.message || "No se pudo confirmar la compra.");
+      console.error("createOrder failed:", e?.status, e?.body || e);
+      const status = e?.status || 0;
+      const msg = (e?.body?.message || e?.message || "").toLowerCase();
+
+      // si el back igualmente mandÃ³ texto de stock, lo mostramos
+      if (msg.includes("stock") || msg.includes("insuficien")) {
+        setErr(e?.body?.message || "No se pudo confirmar la compra: stock insuficiente.");
+        return;
+      }
+
+      if (status === 401 || status === 403) {
+        setErr("Tu sesiÃ³n expirÃ³. IniciÃ¡ sesiÃ³n para finalizar la compra.");
+        return;
+      }
+
+      setErr(e?.body?.message || e?.message || "No se pudo confirmar la compra.");
     } finally {
       setSubmitting(false);
     }
@@ -1947,7 +2061,7 @@ export default function CheckoutFinal() {
         <h1 className="text-4xl font-extrabold">Checkout</h1>
 
         <div className="mt-10 grid gap-12 lg:grid-cols-2">
-          {/* Columna izquierda: resumen de productos */}
+          {/* Columna izquierda */}
           <section>
             <h2 className="mb-4 border-b border-primary/20 pb-2 text-xl font-semibold dark:border-primary/30">
               Resumen del pedido
@@ -1960,24 +2074,12 @@ export default function CheckoutFinal() {
                 return (
                   <li key={it.id} className="py-4">
                     <div className="grid grid-cols-[80px,1fr,auto] items-center gap-4">
-                      <Link
-                        to={`/product/${it.id}`}
-                        className="h-20 w-20 overflow-hidden rounded-lg bg-stone-800"
-                      >
-                        {img ? (
-                          <img
-                            src={img}
-                            alt={it.name}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : null}
+                      <Link to={`/product/${it.id}`} className="h-20 w-20 overflow-hidden rounded-lg bg-stone-800">
+                        {img ? <img src={img} alt={it.name} className="h-full w-full object-cover" /> : null}
                       </Link>
 
                       <div>
-                        <Link
-                          to={`/product/${it.id}`}
-                          className="font-semibold hover:text-primary"
-                        >
+                        <Link to={`/product/${it.id}`} className="font-semibold hover:text-primary">
                           {it.name}
                         </Link>
                         <p className="text-sm text-stone-400">
@@ -1985,9 +2087,7 @@ export default function CheckoutFinal() {
                         </p>
                       </div>
 
-                      <div className="text-right font-semibold">
-                        {fmt(totalItem)}
-                      </div>
+                      <div className="text-right font-semibold">{fmt(totalItem)}</div>
                     </div>
                   </li>
                 );
@@ -2009,14 +2109,13 @@ export default function CheckoutFinal() {
               </div>
               {method === "cash" && (
                 <p className="text-sm text-amber-300/90">
-                  RecordÃ¡ tener billetes en buen estado y, en lo posible, el
-                  monto justo.
+                  RecordÃ¡ tener billetes en buen estado y, en lo posible, el monto justo.
                 </p>
               )}
             </div>
           </section>
 
-          {/* Columna derecha: datos de retiro + mÃ©todo de pago */}
+          {/* Columna derecha */}
           <aside>
             <section className="space-y-6">
               <div>
@@ -2037,17 +2136,14 @@ export default function CheckoutFinal() {
                 </h3>
                 <div className="flex items-center justify-between rounded-lg bg-primary/10 p-4 dark:bg-primary/20">
                   <p className="font-medium">{methodLabel}</p>
-                  <Link
-                    to="/payment"
-                    className="text-sm text-primary hover:opacity-90"
-                  >
+                  <Link to="/payment" className="text-sm text-primary hover:opacity-90">
                     Cambiar
                   </Link>
                 </div>
               </div>
 
               {err && (
-                <p className="rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+                <p className="whitespace-pre-line rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300">
                   {err}
                 </p>
               )}
@@ -3147,8 +3243,8 @@ import Search from "./pages/Search.jsx";
 import Payment from "./pages/Payment.jsx";
 import CheckoutFinal from "./pages/CheckoutFinal.jsx";
 import ProtectedRoute from "./router/ProtectedRoute.jsx";
-import AdminProducts from "./pages/AdminProducts.jsx";
-import ProductEditor from "./pages/admin/ProductEditor.jsx"; // â† import importante
+import ProductEditor from "./pages/admin/ProductEditor.jsx";
+import EditProduct from "./pages/admin/EditProduct.jsx"; // crear/editar
 
 export default function App() {
   return (
@@ -3185,8 +3281,7 @@ export default function App() {
             }
           />
 
-          {/* Rutas admin */}
-          
+          {/* Admin */}
           <Route
             path="/admin/products/:id/edit"
             element={
@@ -3195,7 +3290,14 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-          
+          <Route
+            path="/admin/products/new"
+            element={
+              <ProtectedRoute role="ADMIN">
+                <EditProduct />
+              </ProtectedRoute>
+            }
+          />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

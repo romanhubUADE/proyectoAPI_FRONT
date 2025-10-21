@@ -80,6 +80,7 @@ export default function ProductEditor() {
     try {
       // 1) datos (PATCH con Bearer)
       await api.patchProduct(id, payload());
+      
 
       // 2) imágenes nuevas -> tu backend /api/products/{id}/images espera "file" UNA por request
       const newFiles = images.filter(im => im.file);
