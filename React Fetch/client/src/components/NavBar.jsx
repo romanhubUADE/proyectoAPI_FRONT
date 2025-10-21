@@ -25,22 +25,23 @@ export default function NavBar() {
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-stone-200 bg-background-light/80 backdrop-blur-sm dark:border-stone-800 dark:bg-background-dark/80">
       <div className="mx-auto flex max-w-8xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-        <Link to="/" className="flex items-center gap-3">
-          <svg className="h-6 w-6 text-primary" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M14.25 2.25a.75.75 0 0 0-.75.75v18a.75.75 0 0 0 .75.75h4.5a.75.75 0 0 0 .75-.75V3a.75.75 0 0 0-.75-.75h-4.5ZM15 3.75h3v16.5h-3V3.75Z" />
-            <path d="M4.5 3.75a.75.75 0 0 0-.75.75v15a.75.75 0 0 0 .75.75h4.5a.75.75 0 0 0 .75-.75V4.5a.75.75 0 0 0-.75-.75h-4.5ZM5.25 5.25h3v13.5h-3V5.25Z" />
-          </svg>
-          <h1 className="text-xl font-bold text-stone-900 dark:text-white">String &amp; Soul</h1>
-        </Link>
 
-        <nav className="flex gap-10">
-          <Link to="/catalog" className="text-sm font-medium text-white hover:text-primary">Catálogo</Link>
-          <Link to="/catalog?cat=electric" className="text-sm font-medium text-white hover:text-primary">Electric</Link>
-          <Link to="/catalog?cat=acoustic" className="text-sm font-medium text-white hover:text-primary">Acoustic</Link>
-          <Link to="/catalog?cat=bass" className="text-sm font-medium text-white hover:text-primary">Bass</Link>
-          {/* ya no mostramos botón Admin ni toggle de rol */}
-        </nav>
+        {/* Izquierda: Logo + Catálogo */}
+        <div className="flex items-center gap-6">
+          <Link to="/" className="flex items-center gap-3">
+            <svg className="h-6 w-6 text-primary" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M14.25 2.25a.75.75 0 0 0-.75.75v18a.75.75 0 0 0 .75.75h4.5a.75.75 0 0 0 .75-.75V3a.75.75 0 0 0-.75-.75h-4.5ZM15 3.75h3v16.5h-3V3.75Z" />
+              <path d="M4.5 3.75a.75.75 0 0 0-.75.75v15a.75.75 0 0 0 .75.75h4.5a.75.75 0 0 0 .75-.75V4.5a.75.75 0 0 0-.75-.75h-4.5ZM5.25 5.25h3v13.5h-3V5.25Z" />
+            </svg>
+            <h1 className="text-xl font-bold text-stone-900 dark:text-white">String &amp; Soul</h1>
+          </Link>
 
+          <Link to="/catalog" className="text-sm font-medium text-white hover:text-primary">
+            Catálogo
+          </Link>
+        </div>
+
+        {/* Derecha: búsqueda, auth, carrito */}
         <div className="flex items-center gap-3">
           <form onSubmit={handleSearch} className="relative w-44 sm:w-52 lg:w-64">
             <input
