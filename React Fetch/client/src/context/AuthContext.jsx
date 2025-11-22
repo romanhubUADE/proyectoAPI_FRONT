@@ -1,59 +1,66 @@
 // src/context/AuthContext.jsx
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+// src/context/AuthContext.jsx
+// Ahora el AuthContext solo es un puente hacia Redux.
 
-const AuthCtx = createContext(null);
+import { createContext, useContext, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
-function decodeJwt(token) {
-  try {
-    const payload = token.split(".")[1];
-    const json = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
-    return json || {};
-  } catch {
-    return {};
-  }
-}
+import {
+  loginUser,
+  registerUser,
+  fetchMe,
+  logout as logoutAction,
+} from "../redux/authSlice.js";
 
-// normaliza authorities desde distintos layouts de payload
-function pickAuthorities(user) {
-  if (!user) return [];
-  if (Array.isArray(user.authorities)) return user.authorities.map(String);
-  if (Array.isArray(user.roles))       return user.roles.map(String);
-  if (typeof user.scope === "string")  return user.scope.split(" ").map(String);
-  if (typeof user.role  === "string")  return [user.role];
-  return [];
-}
+const AuthContext = createContext();
 
-export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => localStorage.getItem("token") || null);
-  const [user,  setUser]  = useState(() => (token ? decodeJwt(token) : null));
+export const AuthProvider = ({ children }) => {
+  const dispatch = useDispatch();
 
-  const login = (accessToken) => {
-    localStorage.setItem("token", accessToken);
-    // nunca escribir localStorage.role
-    setToken(accessToken);
-    setUser(decodeJwt(accessToken));
-  };
+  const {
+    user,
+    token,
+    isAuth,
+    isAdmin,
+    status,
+    error,
+    registerStatus,
+    registerError,
+  } = useSelector((s) => s.auth);
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role"); // limpia flag simulado si existiera
-    setToken(null);
-    setUser(null);
-  };
-
+  // auto-login si había token guardado
   useEffect(() => {
-    if (token) setUser(decodeJwt(token));
-  }, [token]);
+    if (token && !user) {
+      dispatch(fetchMe());
+    }
+  }, [token, user, dispatch]);
 
-  const authorities = useMemo(() => pickAuthorities(user), [user]);
-  const isAdmin = useMemo(() => authorities.includes("ADMIN"), [authorities]);
+  const login = (email, password) =>
+    dispatch(loginUser({ email, password }));
 
-  const value = useMemo(
-    () => ({ token, user, login, logout, isAuth: !!token, authorities, isAdmin }),
-    [token, user, authorities, isAdmin]
+  const register = (payload) => dispatch(registerUser(payload));
+
+  const logout = () => dispatch(logoutAction());
+
+  const value = {
+    user,
+    token,
+    isAuth,
+    isAdmin,
+    status,
+    error,
+
+    registerStatus,
+    registerError,
+
+    login,
+    register,
+    logout,
+  };
+
+  return (
+    <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
   );
+};
 
-  return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
-}
-
-export const useAuth = () => useContext(AuthCtx);
+export const useAuth = () => useContext(AuthContext);

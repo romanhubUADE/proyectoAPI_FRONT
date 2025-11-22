@@ -1,18 +1,19 @@
 // src/pages/Login.jsx
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { api } from "../lib/api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+
+  const { login, status, error, isAuth } = useAuth();
 
   const [form, setForm] = useState({ email: "", password: "" });
   const [remember, setRemember] = useState(false);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [localError, setLocalError] = useState("");
+
+  const loading = status === "loading";
 
   // precarga email si se marcó "Recordarme" antes
   useEffect(() => {
@@ -23,37 +24,42 @@ export default function Login() {
     }
   }, []);
 
-  const onChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    if (type === "checkbox") setRemember(checked);
-    else setForm((f) => ({ ...f, [name]: value }));
+  // si se loguea con éxito, redirige
+  useEffect(() => {
+    if (isAuth) {
+      const from = location.state?.from?.pathname || "/";
+      navigate(from, { replace: true });
+    }
+  }, [isAuth, location, navigate]);
+
+  const onChangeInput = (e) => {
+    const { name, value } = e.target;
+    setForm((f) => ({ ...f, [name]: value }));
+    setLocalError("");
+  };
+
+  const onChangeRemember = (e) => {
+    setRemember(e.target.checked);
   };
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    setLoading(true);
-    try {
-      const { accessToken } = await api.login({
-        email: form.email,
-        password: form.password,
-      });
-      // guarda token en AuthContext + localStorage
-      login(accessToken);
+    setLocalError("");
 
-      // persiste email si "Recordarme" está activo
-      if (remember) localStorage.setItem("remember_email", form.email);
-      else localStorage.removeItem("remember_email");
-
-      // redirige a ruta previa o a /account
-      const to = location.state?.from || "/account";
-      navigate(to, { replace: true });
-    } catch (err) {
-      setError(err.message || "Credenciales inválidas");
-    } finally {
-      setLoading(false);
+    if (!form.email || !form.password) {
+      setLocalError("Completá email y contraseña.");
+      return;
     }
+
+    // dispara thunk loginUser a través del AuthContext
+    await login(form.email, form.password);
+
+    // si recordarme está activo, guardamos email
+    if (remember) localStorage.setItem("remember_email", form.email);
+    else localStorage.removeItem("remember_email");
   };
+
+  const displayError = localError || error;
 
   return (
     <div className="flex min-h-[70vh] items-center justify-center px-4 py-12 sm:py-20">
@@ -63,35 +69,47 @@ export default function Login() {
             Bienvenido de nuevo
           </h2>
           <p className="mb-6 text-sm text-stone-600 dark:text-stone-300">
-            Inicia sesión con tu cuenta para continuar
+            Iniciá sesión con tu cuenta para continuar
           </p>
 
-          <form className="space-y-6" onSubmit={onSubmit}>
-            <label className="block">
-              <span className="text-sm text-stone-700 dark:text-stone-200">E-mail</span>
+          {displayError && (
+            <div className="mb-4 rounded-md bg-red-500/10 px-3 py-2 text-xs text-red-300">
+              {displayError}
+            </div>
+          )}
+
+          <form onSubmit={onSubmit} className="space-y-4 text-sm">
+            <div>
+              <label className="mb-1 block text-stone-700 dark:text-stone-200">
+                Email
+              </label>
               <input
                 type="email"
                 name="email"
+                autoComplete="email"
                 required
-                className="mt-1 block w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm shadow-sm placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-primary dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
-                placeholder="tu@ejemplo.com"
+                className="mt-1 block w-full rounded-md border border-stone-300 px-3 py-2 text-sm text-stone-900 shadow-sm focus:border-primary focus:ring-primary dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
+                placeholder="vos@ejemplo.com"
                 value={form.email}
-                onChange={onChange}
+                onChange={onChangeInput}
               />
-            </label>
+            </div>
 
-            <label className="block">
-              <span className="text-sm text-stone-700 dark:text-stone-200">Contraseña</span>
+            <div>
+              <label className="mb-1 block text-stone-700 dark:text-stone-200">
+                Contraseña
+              </label>
               <input
                 type="password"
                 name="password"
+                autoComplete="current-password"
                 required
-                className="mt-1 block w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm shadow-sm placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-primary dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
+                className="mt-1 block w-full rounded-md border border-stone-300 px-3 py-2 text-sm text-stone-900 shadow-sm focus:border-primary focus:ring-primary dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
                 placeholder="••••••••"
                 value={form.password}
-                onChange={onChange}
+                onChange={onChangeInput}
               />
-            </label>
+            </div>
 
             <div className="flex items-center justify-between">
               <label className="flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300">
@@ -99,7 +117,7 @@ export default function Login() {
                   type="checkbox"
                   className="h-4 w-4 rounded border-stone-300 bg-white text-primary focus:ring-primary"
                   checked={remember}
-                  onChange={onChange}
+                  onChange={onChangeRemember}
                 />
                 <span>Recordarme</span>
               </label>
@@ -111,17 +129,15 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-95"
+              className="mt-2 inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary/80 disabled:opacity-60"
             >
-              {loading ? "Ingresando..." : "Iniciar sesión"}
+              {loading ? "Ingresando…" : "Iniciar sesión"}
             </button>
-
-            {error && <p className="text-center text-red-500 text-sm">{error}</p>}
           </form>
 
           <p className="mt-6 text-center text-sm text-stone-600 dark:text-stone-300">
             ¿No tenés cuenta?{" "}
-            <Link to="/register" className="font-medium text-primary hover:underline">
+            <Link to="/register" className="text-primary hover:underline">
               Registrate
             </Link>
           </p>

@@ -1,12 +1,13 @@
 // src/pages/Register.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { api } from "../lib/api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
 export default function Register() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { register, login, registerStatus, registerError, isAuth } =
+    useAuth();
+
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -14,79 +15,119 @@ export default function Register() {
     password: "",
     confirm: "",
   });
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [localError, setLocalError] = useState("");
+
+  const loading = registerStatus === "loading";
+
+  // si ya está logueado, mandamos a /account
+  useEffect(() => {
+    if (isAuth) navigate("/account", { replace: true });
+  }, [isAuth, navigate]);
+
+  // después de un registro exitoso → intentar login automático
+  useEffect(() => {
+    if (registerStatus === "ready") {
+      (async () => {
+        try {
+          await login(form.email, form.password);
+          navigate("/account", { replace: true });
+        } catch {
+          // si falla el login automático, se puede manejar aparte
+        }
+      })();
+    }
+  }, [registerStatus, form.email, form.password, login, navigate]);
 
   const onChange = (e) => {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
+    setLocalError("");
   };
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    setError("");
+    setLocalError("");
 
+    if (!form.firstName || !form.email || !form.password) {
+      setLocalError("Completá todos los campos obligatorios.");
+      return;
+    }
     if (form.password !== form.confirm) {
-      setError("Las contraseñas no coinciden");
+      setLocalError("Las contraseñas no coinciden.");
       return;
     }
 
-    setLoading(true);
-    try {
-      const dto = {
-        firstName: form.firstName.split(" ")[0] || form.firstName,
-        lastName: form.lastName.split(" ")[1] || "",
-        email: form.email,
-        password: form.password,
-        role: "USER",
-      };
-      const { accessToken } = await api.register(dto);
-      login(accessToken); // guarda token en localStorage
-      navigate("/account"); // redirige
-    } catch (err) {
-      setError(err.message || "Error al registrarse");
-    } finally {
-      setLoading(false);
-    }
+    const dto = {
+      firstName: form.firstName.split(" ")[0] || form.firstName,
+      lastName: form.lastName || "",
+      email: form.email,
+      password: form.password,
+      role: "USER",
+    };
+
+    await register(dto);
   };
+
+  const displayError = localError || registerError;
 
   return (
     <div className="flex min-h-[70vh] items-center justify-center px-4 py-12 sm:py-20">
       <div className="w-full max-w-xl">
         <div className="rounded-xl bg-[#14100b] p-6">
           <h2 className="mb-2 text-2xl font-semibold text-stone-900 dark:text-white">
-            Crea tu cuenta
+            Crear cuenta
           </h2>
           <p className="mb-6 text-sm text-stone-600 dark:text-stone-300">
-            Regístrate para acceder a ventas, listas y tu cuenta
+            Registrate para empezar a comprar en String &amp; Soul
           </p>
 
+          {displayError && (
+            <div className="mb-4 rounded-md bg-red-500/10 px-3 py-2 text-xs text-red-300">
+              {displayError}
+            </div>
+          )}
+
           <form onSubmit={onSubmit} className="grid gap-6">
-            <div>
-              <label className="block text-sm text-stone-700 dark:text-stone-200">
-                Nombre completo
-              </label>
-              <input
-                type="text"
-                name="firstName"
-                required
-                className="mt-1 block w-full rounded-md border border-stone-200 px-3 py-2 text-sm placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-primary dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
-                placeholder="Tu nombre"
-                value={form.firstName}
-                onChange={onChange}
-              />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="block text-sm text-stone-700 dark:text-stone-200">
+                  Nombre
+                </label>
+                <input
+                  type="text"
+                  name="firstName"
+                  required
+                  className="mt-1 block w-full rounded-md border border-stone-300 px-3 py-2 text-sm text-stone-900 shadow-sm focus:border-primary focus:ring-primary dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
+                  placeholder="Tu nombre"
+                  value={form.firstName}
+                  onChange={onChange}
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-stone-700 dark:text-stone-200">
+                  Apellido
+                </label>
+                <input
+                  type="text"
+                  name="lastName"
+                  className="mt-1 block w-full rounded-md border border-stone-300 px-3 py-2 text-sm text-stone-900 shadow-sm focus:border-primary focus:ring-primary dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
+                  placeholder="Tu apellido"
+                  value={form.lastName}
+                  onChange={onChange}
+                />
+              </div>
             </div>
 
             <div>
               <label className="block text-sm text-stone-700 dark:text-stone-200">
-                E-mail
+                Email
               </label>
               <input
                 type="email"
                 name="email"
                 required
-                className="mt-1 block w-full rounded-md border border-stone-200 px-3 py-2 text-sm placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-primary dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
-                placeholder="tu@ejemplo.com"
+                className="mt-1 block w-full rounded-md border border-stone-300 px-3 py-2 text-sm text-stone-900 shadow-sm focus:border-primary focus:ring-primary dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
+                placeholder="vos@ejemplo.com"
                 value={form.email}
                 onChange={onChange}
               />
@@ -101,7 +142,7 @@ export default function Register() {
                   type="password"
                   name="password"
                   required
-                  className="mt-1 block w-full rounded-md border border-stone-200 px-3 py-2 text-sm placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-primary dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
+                  className="mt-1 block w-full rounded-md border border-stone-300 px-3 py-2 text-sm text-stone-900 shadow-sm focus:border-primary focus:ring-primary dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
                   placeholder="••••••••"
                   value={form.password}
                   onChange={onChange}
@@ -115,8 +156,8 @@ export default function Register() {
                   type="password"
                   name="confirm"
                   required
-                  className="mt-1 block w-full rounded-md border border-stone-200 px-3 py-2 text-sm placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-primary dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
-                  placeholder="••••••••"
+                  className="mt-1 block w-full rounded-md border border-stone-300 px-3 py-2 text-sm text-stone-900 shadow-sm focus:border-primary focus:ring-primary dark:border-stone-700 dark:bg-stone-800 dark:text-stone-100"
+                  placeholder="Repetí la contraseña"
                   value={form.confirm}
                   onChange={onChange}
                 />
@@ -126,22 +167,15 @@ export default function Register() {
             <button
               type="submit"
               disabled={loading}
-              className="mt-2 w-full rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-95"
+              className="mt-2 inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary/80 disabled:opacity-60"
             >
-              {loading ? "Creando cuenta..." : "Crear cuenta"}
+              {loading ? "Creando cuenta…" : "Registrarme"}
             </button>
-
-            {error && (
-              <p className="text-center text-red-500 text-sm">{error}</p>
-            )}
           </form>
 
           <p className="mt-6 text-center text-sm text-stone-600 dark:text-stone-300">
-            ¿Ya tenés una cuenta?{" "}
-            <Link
-              to="/login"
-              className="font-medium text-primary hover:underline"
-            >
+            ¿Ya tenés cuenta?{" "}
+            <Link to="/login" className="text-primary hover:underline">
               Iniciar sesión
             </Link>
           </p>

@@ -1,188 +1,175 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useRole } from "../auth/RoleContext.jsx";
+// src/pages/AdminProductEdit.jsx
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 
-export default function AdminProducts() {
-  const { role } = useRole();
-  const navigate = useNavigate();
+import {
+  fetchProductById,
+  createProduct,
+  updateProduct,
+  uploadProductImages,
+  clearCurrent,
+  resetSaveStatus,
+} from "../redux/productsSlice.js";
 
-  const [rows, setRows] = useState([]);
-  const [q, setQ] = useState("");
-  const [loading, setLoading] = useState(true);
+export default function AdminProductEdit() {
+  const { id } = useParams();
+  const creating = id === "new";
+  const nav = useNavigate();
+  const dispatch = useDispatch();
 
-  // seguridad extra (la ruta ya está protegida)
-  if (role !== "ADMIN") return null;
+  const {
+    current,
+    currentStatus,
+    currentError,
+    saveStatus,
+    saveError,
+    uploadStatus,
+    uploadError,
+  } = useSelector((s) => s.products);
+
+  const [form, setForm] = useState({
+    name: "",
+    description: "",
+    price: "",
+    category: "",
+  });
 
   useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        const r = await fetch("http://localhost:4002/products");
-        const data = await r.json();
-        if (!alive) return;
-        setRows(Array.isArray(data) ? data : data.content ?? []);
-      } catch {
-        setRows([]);
-      } finally {
-        if (alive) setLoading(false);
-      }
-    })();
-    return () => (alive = false);
-  }, []);
+    if (!creating && id) {
+      dispatch(fetchProductById(id));
+    } else {
+      dispatch(clearCurrent());
+    }
+  }, [creating, id, dispatch]);
 
-  const filtered = useMemo(() => {
-    const term = q.trim().toLowerCase();
-    if (!term) return rows;
-    return rows.filter((p) =>
-      [p.name, p.description, String(p.id)]
-        .filter(Boolean)
-        .some((v) => String(v).toLowerCase().includes(term))
-    );
-  }, [rows, q]);
+  useEffect(() => {
+    if (!creating && current) {
+      setForm({
+        name: current.name ?? "",
+        description: current.description ?? "",
+        price: String(current.price ?? ""),
+        category: current.category ?? "",
+      });
+    }
+  }, [creating, current]);
 
-  const del = async (id) => {
-    if (!confirm("¿Eliminar producto?")) return;
-    const r = await fetch(`http://localhost:4002/products/${id}`, {
-      method: "DELETE",
-    });
-    if (!r.ok) return alert("No se pudo eliminar");
-    setRows((s) => s.filter((p) => p.id !== id));
+  const onChange = (e) => {
+    const { name, value } = e.target;
+    setForm((f) => ({ ...f, [name]: value }));
   };
 
-  const createNew = async () => {
-    const body = {
-      name: "Nuevo producto",
-      description: "",
-      longDescription: "",
-      price: 0,
-      stock: 0,
-      specs: [],
-      activo: true,
-    };
-    const r = await fetch("http://localhost:4002/products", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    if (!r.ok) return alert("No se pudo crear");
-    const created = await r.json();
-    navigate(`/admin/products/${created.id}/edit`);
+  const onSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!form.name || !form.price) return;
+
+    if (creating) {
+      await dispatch(createProduct(form));
+    } else {
+      await dispatch(updateProduct({ id, data: form }));
+    }
+
+    dispatch(resetSaveStatus());
+    nav("/admin/products");
+  };
+
+  const onImages = async (e) => {
+    const files = [...e.target.files];
+    if (!files.length || !id || creating) return;
+    await dispatch(uploadProductImages({ id, files }));
   };
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <header className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-        <h1 className="text-2xl font-bold text-white">Administrar productos</h1>
+    <div className="mx-auto max-w-3xl px-4 py-10 text-stone-100">
+      <h1 className="mb-6 text-2xl font-semibold">
+        {creating ? "Nuevo producto" : "Editar producto"}
+      </h1>
 
-        <div className="flex w-full max-w-xl items-center gap-3 sm:w-auto">
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Buscar por nombre, descripción o ID…"
-            className="w-full rounded-md border border-stone-700 bg-stone-900 px-3 py-2 text-sm text-stone-200 placeholder-stone-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-          />
-          <button
-            onClick={createNew}
-            className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90"
-          >
-            Nuevo
-          </button>
-        </div>
-      </header>
-
-      {loading ? (
-        <div className="text-stone-300">Cargando…</div>
-      ) : (
-        <div className="overflow-x-auto rounded-lg border border-stone-800">
-          <table className="min-w-full divide-y divide-stone-800">
-            <thead className="bg-stone-900/60">
-              <tr>
-                <Th>ID</Th>
-                <Th>Nombre</Th>
-                <Th className="text-right">Precio</Th>
-                <Th className="text-right">Stock</Th>
-                <Th>Activo</Th>
-                <Th className="text-right">Acciones</Th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-stone-800 bg-stone-900/30">
-              {filtered.map((p) => (
-                <tr key={p.id} className="hover:bg-stone-900/60">
-                  <Td>{p.id}</Td>
-                  <Td>
-                    <div className="flex items-center gap-3">
-                      {p.images?.[0] && (
-                        <img
-                          src={p.images[0]}
-                          alt=""
-                          className="h-10 w-10 rounded object-cover"
-                        />
-                      )}
-                      <div className="max-w-[32ch] truncate">{p.name}</div>
-                    </div>
-                  </Td>
-                  <Td className="text-right">${Number(p.price ?? 0).toLocaleString()}</Td>
-                  <Td className="text-right">{p.stock ?? 0}</Td>
-                  <Td>
-                    <span
-                      className={`rounded px-2 py-0.5 text-xs ${
-                        p.activo ? "bg-green-500/15 text-green-400" : "bg-stone-700 text-stone-300"
-                      }`}
-                    >
-                      {p.activo ? "Sí" : "No"}
-                    </span>
-                  </Td>
-                  <Td className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Link
-                        to={`/admin/products/${p.id}/edit`}
-                        className="rounded-md bg-stone-700 px-3 py-1.5 text-xs font-semibold text-stone-100 hover:bg-stone-600"
-                      >
-                        Editar
-                      </Link>
-                      <button
-                        onClick={() => del(p.id)}
-                        className="rounded-md bg-red-600/20 px-3 py-1.5 text-xs font-semibold text-red-400 hover:bg-red-600/30"
-                      >
-                        Eliminar
-                      </button>
-                    </div>
-                  </Td>
-                </tr>
-              ))}
-
-              {filtered.length === 0 && (
-                <tr>
-                  <Td colSpan={6} className="py-10 text-center text-stone-400">
-                    No hay resultados.
-                  </Td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+      {currentStatus === "loading" && !creating && (
+        <p className="mb-4 text-stone-400">Cargando producto…</p>
       )}
-    </main>
-  );
-}
+      {currentStatus === "error" && (
+        <p className="mb-4 text-red-400">
+          Error al cargar el producto: {currentError}
+        </p>
+      )}
 
-/* helpers visuales */
-function Th({ children, className = "" }) {
-  return (
-    <th
-      className={
-        "px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-stone-300 " +
-        className
-      }
-    >
-      {children}
-    </th>
-  );
-}
-function Td({ children, className = "", colSpan }) {
-  return (
-    <td className={"px-4 py-3 text-sm text-stone-200 " + className} colSpan={colSpan}>
-      {children}
-    </td>
+      {saveStatus === "failed" && (
+        <p className="mb-4 text-red-400">
+          Error al guardar: {saveError}
+        </p>
+      )}
+
+      {uploadStatus === "failed" && (
+        <p className="mb-4 text-red-400">
+          Error al subir imágenes: {uploadError}
+        </p>
+      )}
+
+      <form onSubmit={onSubmit} className="space-y-4">
+        <div>
+          <label className="mb-1 block text-sm">Nombre</label>
+          <input
+            name="name"
+            value={form.name}
+            onChange={onChange}
+            className="w-full rounded-md border border-stone-700 bg-stone-900 px-3 py-2 text-sm outline-none"
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm">Descripción</label>
+          <textarea
+            name="description"
+            value={form.description}
+            onChange={onChange}
+            className="w-full rounded-md border border-stone-700 bg-stone-900 px-3 py-2 text-sm outline-none"
+          />
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-sm">Precio</label>
+            <input
+              type="number"
+              name="price"
+              value={form.price}
+              onChange={onChange}
+              className="w-full rounded-md border border-stone-700 bg-stone-900 px-3 py-2 text-sm outline-none"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm">Categoría</label>
+            <input
+              name="category"
+              value={form.category}
+              onChange={onChange}
+              className="w-full rounded-md border border-stone-700 bg-stone-900 px-3 py-2 text-sm outline-none"
+            />
+          </div>
+        </div>
+
+        {!creating && (
+          <div>
+            <label className="mb-1 block text-sm">Imágenes</label>
+            <input
+              type="file"
+              multiple
+              onChange={onImages}
+              className="w-full text-sm"
+            />
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={saveStatus === "loading"}
+          className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/80 disabled:opacity-60"
+        >
+          Guardar
+        </button>
+      </form>
+    </div>
   );
 }
