@@ -1,14 +1,16 @@
+// src/pages/Catalog.jsx
 import { useMemo, useState, useCallback, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+
 import Filters from "../components/Filters.jsx";
 import ProductCard from "../components/ProductCard.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { fetchProducts } from "../redux/productsSlice.js";
 
-
 const norm = (s = "") =>
   s.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
+
 const CAT = {
   acoustic: "acústica",
   electric: "eléctrica",
@@ -18,6 +20,7 @@ const CAT = {
 
 export default function Catalog() {
   const { isAdmin } = useAuth();
+  console.log("isAdmin?", isAdmin);
   const { search } = useLocation();
 
   const dispatch = useDispatch();
@@ -25,7 +28,7 @@ export default function Catalog() {
     (state) => state.products
   );
 
-  // Cargar productos desde la slice si todavía no se cargaron
+  // Cargar productos sólo una vez
   useEffect(() => {
     if (status === "idle") {
       dispatch(fetchProducts());
@@ -48,17 +51,19 @@ export default function Catalog() {
       ? "Guitarras Clásicas"
       : "Catálogo";
 
-  // estado de filtros (igual que antes)
+  // estado de filtros
   const [catSet, setCatSet] = useState(new Set());
   const [price, setPrice] = useState({ min: null, max: null });
 
   const onFilters = useCallback((evt) => {
     if (evt.categories) setCatSet(new Set(evt.categories.map(norm)));
+
     if (evt.range) {
       if (evt.range === "low") setPrice({ min: 0, max: 100000 });
       if (evt.range === "mid") setPrice({ min: 100000, max: 150000 });
       if (evt.range === "high") setPrice({ min: 150000, max: Infinity });
     }
+
     if (evt.range === "" && (evt.min !== undefined || evt.max !== undefined)) {
       const min = evt.min === "" ? 0 : Number(evt.min);
       const max = evt.max === "" ? Infinity : Number(evt.max);
@@ -66,25 +71,27 @@ export default function Catalog() {
     }
   }, []);
 
-  // base por categoría de la URL (AHORA desde Redux, no desde ShopContext)
+  // base por categoría (de la URL)
   const base = useMemo(() => {
     const list = Array.isArray(allProducts) ? allProducts : [];
     if (!wanted) return list;
     return list.filter((p) => norm(p.category || "").includes(wanted));
   }, [allProducts, wanted]);
 
-  // aplicar filtros (categorías seleccionadas + precio)
-  const products = useMemo(() => {
-    return base.filter((p) => {
-      const byCat =
-        catSet.size === 0 ? true : catSet.has(norm(p.category || ""));
-      const val = Number(p.price) || 0;
-      const byPrice =
-        (price.min == null ? true : val >= price.min) &&
-        (price.max == null ? true : val <= price.max);
-      return byCat && byPrice;
-    });
-  }, [base, catSet, price]);
+  // aplicar filtros (categoría + precio)
+  const products = useMemo(
+    () =>
+      base.filter((p) => {
+        const byCat =
+          catSet.size === 0 ? true : catSet.has(norm(p.category || ""));
+        const val = Number(p.price) || 0;
+        const byPrice =
+          (price.min == null ? true : val >= price.min) &&
+          (price.max == null ? true : val <= price.max);
+        return byCat && byPrice;
+      }),
+    [base, catSet, price]
+  );
 
   const isLoading = status === "loading";
   const isError = status === "error";
@@ -132,9 +139,7 @@ export default function Catalog() {
           </div>
 
           {products.length === 0 && !isLoading && !isError && (
-            <div className="mt-6 text-stone-400">
-              Sin productos disponibles.
-            </div>
+            <div className="mt-6 text-stone-400">Sin productos disponibles.</div>
           )}
         </section>
       </div>
