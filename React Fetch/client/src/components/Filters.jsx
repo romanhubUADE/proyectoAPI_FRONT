@@ -92,10 +92,10 @@ export default function Filters({ onChange }) {
 
   const handleCreateCategory = async (e) => {
     e.preventDefault();
-    const name = newCatName.trim();
-    if (!name) return;
-
-    await dispatch(createCategory({ name }));
+    const description = newCatName.trim();
+    if (!description) return;
+  
+    await dispatch(createCategory({ description }));
     setNewCatName("");
   };
 
