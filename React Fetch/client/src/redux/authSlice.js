@@ -2,7 +2,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
-const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:4002/api";
+const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:4002/api/v1";
 
 // Helpers para token
 const getToken = () => localStorage.getItem("token") || "";
@@ -14,37 +14,47 @@ export const loginUser = createAsyncThunk(
   "auth/loginUser",
   async ({ email, password }, { rejectWithValue }) => {
     try {
-      const { data } = await axios.post(`${API_BASE}/auth/login`, {
+      const { data } = await axios.post(`${API_BASE}/v1/auth/authenticate`, {
         email,
         password,
       });
 
-      if (!data?.token) throw new Error("Token no recibido.");
-      saveToken(data.token);
+      const token = data?.accessToken;
+      if (!token) throw new Error("Token no recibido.");
 
-      return data;
+      saveToken(token);
+
+      // el slice usa action.payload.token
+      return { token, user: null };
     } catch (error) {
-      if (error?.response?.data?.message)
+      if (error?.response?.data?.message) {
         return rejectWithValue(error.response.data.message);
+      }
       return rejectWithValue(error.message || "Error al iniciar sesión");
     }
   }
 );
+
+
 
 // --- REGISTER ---
 export const registerUser = createAsyncThunk(
   "auth/registerUser",
   async (payload, { rejectWithValue }) => {
     try {
-      const { data } = await axios.post(`${API_BASE}/auth/register`, payload);
+      const { data } = await axios.post(`${API_BASE}/v1/auth/register`, payload);
+      // hoy solo usás registerStatus / registerError, así que alcanza con devolver data
       return data;
     } catch (error) {
-      if (error?.response?.data?.message)
+      if (error?.response?.data?.message) {
         return rejectWithValue(error.response.data.message);
+      }
       return rejectWithValue(error.message || "Error al registrarse");
     }
   }
 );
+
+
 
 // --- GET ME ---
 export const fetchMe = createAsyncThunk(
@@ -54,11 +64,11 @@ export const fetchMe = createAsyncThunk(
       const token = getToken();
       if (!token) return rejectWithValue("No hay token.");
 
-      const { data } = await axios.get(`${API_BASE}/auth/me`, {
+      const { data } = await axios.get(`${API_BASE}/v1/auth/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      return data;
+      return data; // UserResponseDTO
     } catch (error) {
       return rejectWithValue(
         error?.response?.data?.message || "Error al obtener usuario"
@@ -66,6 +76,8 @@ export const fetchMe = createAsyncThunk(
     }
   }
 );
+
+
 
 const initialState = {
   token: getToken() || null,

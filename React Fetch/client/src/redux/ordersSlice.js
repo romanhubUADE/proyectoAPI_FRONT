@@ -4,6 +4,7 @@ import axios from "axios";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:4002/api";
 
+// === Helpers de auth y errores ===
 const getToken = () => localStorage.getItem("token") || "";
 
 const authHeaders = () => {
@@ -26,15 +27,15 @@ const getErrorMessage = (error, fallback) => {
   return fallback;
 };
 
+// ======================= THUNKS =======================
+
 // GET /api/compras/mias
 export const fetchMyOrders = createAsyncThunk(
   "orders/fetchMine",
   async (_, { rejectWithValue }) => {
     try {
       const { data } = await axios.get(`${API_BASE}/compras/mias`, {
-        headers: {
-          ...authHeaders(),
-        },
+        headers: authHeaders(), // ← IMPORTANTE: acá va el token
       });
       return toArray(data);
     } catch (error) {
@@ -45,7 +46,7 @@ export const fetchMyOrders = createAsyncThunk(
   }
 );
 
-// POST /api/compras  (o endpoint equivalente en tu back)
+// POST /api/compras
 export const createOrder = createAsyncThunk(
   "orders/create",
   async (payload, { rejectWithValue }) => {
@@ -53,7 +54,7 @@ export const createOrder = createAsyncThunk(
       const { data } = await axios.post(`${API_BASE}/compras`, payload, {
         headers: {
           "Content-Type": "application/json",
-          ...authHeaders(),
+          ...authHeaders(), // ← IMPORTANTE: acá va el token
         },
       });
       return data;
@@ -65,15 +66,19 @@ export const createOrder = createAsyncThunk(
   }
 );
 
+// ======================= STATE =======================
+
 const initialState = {
   mine: [],
-  mineStatus: "idle",   // "idle" | "loading" | "ready" | "error"
+  mineStatus: "idle", // "idle" | "loading" | "ready" | "error"
   mineError: null,
 
   createStatus: "idle", // "idle" | "loading" | "ready" | "error"
   createError: null,
   lastCreated: null,
 };
+
+// ======================= SLICE =======================
 
 const ordersSlice = createSlice({
   name: "orders",
