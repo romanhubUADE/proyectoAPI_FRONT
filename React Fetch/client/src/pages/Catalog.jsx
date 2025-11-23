@@ -71,27 +71,32 @@ export default function Catalog() {
     }
   }, []);
 
-  // base por categoría (de la URL)
-  const base = useMemo(() => {
-    const list = Array.isArray(allProducts) ? allProducts : [];
-    if (!wanted) return list;
-    return list.filter((p) => norm(p.category || "").includes(wanted));
-  }, [allProducts, wanted]);
-
-  // aplicar filtros (categoría + precio)
-  const products = useMemo(
-    () =>
-      base.filter((p) => {
-        const byCat =
-          catSet.size === 0 ? true : catSet.has(norm(p.category || ""));
-        const val = Number(p.price) || 0;
-        const byPrice =
-          (price.min == null ? true : val >= price.min) &&
-          (price.max == null ? true : val <= price.max);
-        return byCat && byPrice;
-      }),
-    [base, catSet, price]
+ // base por categoría (de la URL)
+const base = useMemo(() => {
+  const list = Array.isArray(allProducts) ? allProducts : [];
+  if (!wanted) return list;
+  return list.filter((p) =>
+    norm(p.categoryDescription || p.category || "").includes(wanted)
   );
+}, [allProducts, wanted]);
+
+// aplicar filtros (categoría + precio)
+const products = useMemo(
+  () =>
+    base.filter((p) => {
+      const catName = norm(p.categoryDescription || p.category || "");
+      const byCat = catSet.size === 0 ? true : catSet.has(catName);
+
+      const val = Number(p.price) || 0;
+      const byPrice =
+        (price.min == null ? true : val >= price.min) &&
+        (price.max == null ? true : val <= price.max);
+
+      return byCat && byPrice;
+    }),
+  [base, catSet, price]
+);
+
 
   const isLoading = status === "loading";
   const isError = status === "error";
