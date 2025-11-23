@@ -1,6 +1,5 @@
 // src/pages/AdminProductEdit.jsx
 
-
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -13,10 +12,12 @@ import {
   clearCurrent,
   resetSaveStatus,
 } from "../redux/productsSlice.js";
+import { fetchCategories } from "../redux/categoriesSlice.js";
 
 export default function AdminProductEdit() {
   const { id } = useParams();
-  const creating = id == "new";
+  // Crear si no hay id (ruta /admin/products/new) o si id === "new"
+  const creating = !id || id === "new";
 
   console.log("ID desde useParams:", id);
   console.log("creating:", creating);
@@ -34,14 +35,32 @@ export default function AdminProductEdit() {
     uploadError,
   } = useSelector((s) => s.products);
 
+  const {
+    items: categories,
+    status: categoriesStatus,
+    error: categoriesError,
+  } = useSelector(
+    (s) => s.categories || { items: [], status: "idle", error: null }
+  );
+
   const [form, setForm] = useState({
     name: "",
     description: "",
     price: "",
-    category: "",
+    stock: "0",
+    categoryId: "",
   });
 
-  // cargar producto si no es "new"
+  const [images, setImages] = useState([]);
+
+  // Cargar categorías solo una vez
+  useEffect(() => {
+    if (categoriesStatus === "idle") {
+      dispatch(fetchCategories());
+    }
+  }, [categoriesStatus, dispatch]);
+
+  // Cargar producto si NO estamos creando
   useEffect(() => {
     if (!creating && id) {
       dispatch(fetchProductById(id));
@@ -50,14 +69,22 @@ export default function AdminProductEdit() {
     }
   }, [creating, id, dispatch]);
 
-  // cuando llega current → rellenar form
+  // Cuando llega el producto actual en modo edición → rellenar form
   useEffect(() => {
     if (!creating && current) {
       setForm({
         name: current.name ?? "",
         description: current.description ?? "",
-        price: String(current.price ?? ""),
-        category: current.category ?? "",
+        price:
+          typeof current.price === "number"
+            ? String(current.price)
+            : current.price ?? "",
+        stock:
+          typeof current.stock === "number"
+            ? String(current.stock)
+            : current.stock ?? "0",
+        categoryId:
+          current.categoryId != null ? String(current.categoryId) : "",
       });
     }
   }, [creating, current]);
@@ -67,35 +94,79 @@ export default function AdminProductEdit() {
     setForm((f) => ({ ...f, [name]: value }));
   };
 
+  const onImagesChange = async (e) => {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+
+    setImages(files);
+
+    // Si estamos editando (producto ya existe) subimos directamente
+    if (!creating && id) {
+      await dispatch(uploadProductImages({ id, files }));
+    }
+  };
+
   const onSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name || !form.price) return;
+
+    const name = form.name.trim();
+    const description = form.description.trim();
+    const price = Number(form.price);
+    const stock = Number.isNaN(Number(form.stock))
+      ? 0
+      : parseInt(form.stock, 10);
+    const categoryId = form.categoryId ? Number(form.categoryId) : null;
+
+    if (!name || !price || !categoryId) {
+      console.error("Faltan campos obligatorios");
+      return;
+    }
 
     let result;
 
     if (creating) {
-      result = await dispatch(createProduct(form));
-    } else {
-      result = await dispatch(updateProduct({ id, data: form }));
-    }
+      // DTO que espera el backend ProductCreateDTO
+      const payload = {
+        name,
+        description,
+        price,
+        stock,
+        categoryId,
+      };
 
-    // ❌ NO NAVEGAR AUTOMÁTICAMENTE
-    // Revisar si hubo error:
-    if (result.error) {
-      console.error("Error al guardar:", result.error);
-      return;
+      result = await dispatch(createProduct(payload));
+
+      if (result.error) {
+        console.error("Error al crear producto:", result.error);
+        return;
+      }
+
+      const createdProduct = result.payload;
+
+      // Si se adjuntaron imágenes al crear, las subimos ahora
+      if (images.length && createdProduct?.id) {
+        await dispatch(
+          uploadProductImages({ id: createdProduct.id, files: images })
+        );
+      }
+    } else {
+      // Para update el backend espera ProductUpdateDTO (description, price, stock)
+      const payload = {
+        description,
+        price,
+        stock,
+      };
+
+      result = await dispatch(updateProduct({ id, data: payload }));
+
+      if (result.error) {
+        console.error("Error al actualizar producto:", result.error);
+        return;
+      }
     }
 
     dispatch(resetSaveStatus());
-
-    // ✔ Redirigimos SOLO si se creó bien
     nav("/admin/products");
-  };
-
-  const onImages = async (e) => {
-    const files = [...e.target.files];
-    if (!files.length || !id || creating) return;
-    await dispatch(uploadProductImages({ id, files }));
   };
 
   return (
@@ -104,7 +175,7 @@ export default function AdminProductEdit() {
         {creating ? "Nuevo producto" : "Editar producto"}
       </h1>
 
-      {/* Estado de carga del fetch */}
+      {/* Estado de carga del producto en edición */}
       {currentStatus === "loading" && !creating && (
         <p className="mb-4 text-stone-400">Cargando producto…</p>
       )}
@@ -114,14 +185,22 @@ export default function AdminProductEdit() {
         </p>
       )}
 
-      {/* ERROR AL GUARDAR */}
-      {saveStatus === "failed" && (
+      {/* Estado de categorías */}
+      {categoriesStatus === "loading" && (
+        <p className="mb-4 text-stone-400">Cargando categorías…</p>
+      )}
+      {categoriesStatus === "error" && (
         <p className="mb-4 text-red-400">
-          Error al guardar: {saveError}
+          Error al cargar categorías: {categoriesError}
         </p>
       )}
 
-      {/* ERROR AL SUBIR IMÁGENES */}
+      {/* Error al guardar */}
+      {saveStatus === "failed" && (
+        <p className="mb-4 text-red-400">Error al guardar: {saveError}</p>
+      )}
+
+      {/* Error al subir imágenes */}
       {uploadStatus === "failed" && (
         <p className="mb-4 text-red-400">
           Error al subir imágenes: {uploadError}
@@ -149,11 +228,13 @@ export default function AdminProductEdit() {
           />
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-3">
           <div>
             <label className="mb-1 block text-sm">Precio</label>
             <input
               type="number"
+              step="0.01"
+              min="0"
               name="price"
               value={form.price}
               onChange={onChange}
@@ -162,28 +243,50 @@ export default function AdminProductEdit() {
           </div>
 
           <div>
-            <label className="mb-1 block text-sm">Categoría</label>
+            <label className="mb-1 block text-sm">Stock</label>
             <input
-              name="category"
-              value={form.category}
+              type="number"
+              min="0"
+              name="stock"
+              value={form.stock}
               onChange={onChange}
               className="w-full rounded-md border border-stone-700 bg-stone-900 px-3 py-2 text-sm outline-none"
             />
           </div>
+
+          <div>
+            <label className="mb-1 block text-sm">Categoría</label>
+            <select
+              name="categoryId"
+              value={form.categoryId}
+              onChange={onChange}
+              className="w-full rounded-md border border-stone-700 bg-stone-900 px-3 py-2 text-sm outline-none"
+            >
+              <option value="">Seleccionar…</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.description}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        {/* Solo disponible en modo editar */}
-        {!creating && (
-          <div>
-            <label className="mb-1 block text-sm">Imágenes</label>
-            <input
-              type="file"
-              multiple
-              onChange={onImages}
-              className="w-full text-sm"
-            />
-          </div>
-        )}
+        {/* Carga de imágenes – disponible tanto en crear como en editar */}
+        <div>
+          <label className="mb-1 block text-sm">Imágenes</label>
+          <input
+            type="file"
+            multiple
+            onChange={onImagesChange}
+            className="w-full text-sm"
+          />
+          {creating && images.length > 0 && (
+            <p className="mt-1 text-xs text-stone-400">
+              {images.length} archivo(s) listo(s) para subir al guardar.
+            </p>
+          )}
+        </div>
 
         <button
           type="submit"

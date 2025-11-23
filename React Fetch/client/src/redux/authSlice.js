@@ -3,8 +3,6 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 
-
-
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:4002/api/v1";
 
 // Helpers para token
@@ -112,8 +110,15 @@ const authSlice = createSlice({
 
         const decoded = jwtDecode(action.payload.token);
 
-        state.user = { email: decoded.sub, role: decoded.role };
-        state.isAdmin = decoded.role === "ADMIN";
+        const role =
+          decoded.role ||
+          (Array.isArray(decoded.authorities) ? decoded.authorities[0] : null);
+
+        state.user = {
+          email: decoded.sub,
+          role,
+        };
+        state.isAdmin = role === "ADMIN";
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.status = "error";
@@ -142,13 +147,41 @@ const authSlice = createSlice({
       })
       .addCase(fetchMe.fulfilled, (state, action) => {
         state.status = "ready";
-        state.user = action.payload;
         state.isAuth = true;
-        state.isAdmin = action.payload?.role === "ADMIN";
+
+        // Datos básicos devueltos por /me
+        const baseUser = action.payload || null;
+
+        // Recalculamos rol usando el token
+        let role = null;
+        if (state.token) {
+          try {
+            const decoded = jwtDecode(state.token);
+            role =
+              decoded.role ||
+              (Array.isArray(decoded.authorities)
+                ? decoded.authorities[0]
+                : null);
+
+            state.user = {
+              ...(baseUser || {}),
+              email: decoded.sub ?? baseUser?.email,
+              role,
+            };
+          } catch {
+            state.user = baseUser;
+          }
+        } else {
+          state.user = baseUser;
+        }
+
+        state.isAdmin = role === "ADMIN";
       })
       .addCase(fetchMe.rejected, (state) => {
         state.status = "idle";
         state.isAuth = false;
+        state.isAdmin = false;
+        state.user = null;
       });
   },
 });

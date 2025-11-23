@@ -51,7 +51,7 @@ export const fetchProductById = createAsyncThunk(
   }
 );
 
-// POST /products
+// POST /products  (JSON, sin imágenes)
 export const createProduct = createAsyncThunk(
   "products/create",
   async (product, { rejectWithValue }) => {
@@ -112,25 +112,29 @@ export const deleteProduct = createAsyncThunk(
   }
 );
 
-// POST /products/:id/images
+// POST /products/:id/images  (subir una o varias imágenes)
 export const uploadProductImages = createAsyncThunk(
   "products/uploadImages",
   async ({ id, files }, { rejectWithValue }) => {
     try {
-      const formData = new FormData();
-      for (const f of files) formData.append("files", f);
+      // El backend espera @RequestParam("file") MultipartFile file
+      // → mandamos una request por archivo.
+      for (const f of files || []) {
+        if (!f) continue;
+        const formData = new FormData();
+        formData.append("file", f);
 
-      const { data } = await axios.post(
-        `${API_BASE}/products/${id}/images`,
-        formData,
-        {
+        await axios.post(`${API_BASE}/products/${id}/images`, formData, {
           headers: {
             "Content-Type": "multipart/form-data",
             ...authHeaders(),
           },
-        }
-      );
-      return data;
+        });
+      }
+
+      // Podríamos devolver info extra si hiciera falta;
+      // de momento alcanza con el id del producto.
+      return { id };
     } catch (err) {
       return rejectWithValue(
         err?.response?.data?.message || "Error al subir imágenes"
@@ -268,6 +272,8 @@ const productsSlice = createSlice({
       })
       .addCase(uploadProductImages.fulfilled, (state) => {
         state.uploadStatus = "succeeded";
+        // Si quisieras, acá podrías hacer un refetch del producto
+        // o actualizar manualmente current/images.
       })
       .addCase(uploadProductImages.rejected, (state, action) => {
         state.uploadStatus = "failed";
