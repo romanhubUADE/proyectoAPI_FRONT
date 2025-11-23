@@ -1,23 +1,28 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+
 import NavBar from "./components/NavBar.jsx";
+import Footer from "./components/Footer.jsx";
+
+// ✔ DEBEN ESTAR ACÁ, SOLO UNA VEZ
+import AdminProductEdit from "./pages/AdminProductEdit.jsx";
+import AdminProducts from "./pages/AdminProducts.jsx";
+
 import Home from "./pages/Home.jsx";
+import About from "./pages/About.jsx";
 import Catalog from "./pages/Catalog.jsx";
 import ProductDetail from "./pages/ProductDetail.jsx";
 import CartPage from "./pages/CartPage.jsx";
 import Checkout from "./pages/Checkout.jsx";
+import CheckoutFinal from "./pages/CheckoutFinal.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import Account from "./pages/Account.jsx";
-import About from "./pages/About.jsx";
-import Footer from "./components/Footer.jsx";
 import Contact from "./pages/Contact.jsx";
 import FAQ from "./pages/FAQ.jsx";
 import Search from "./pages/Search.jsx";
 import Payment from "./pages/Payment.jsx";
-import CheckoutFinal from "./pages/CheckoutFinal.jsx";
+
 import ProtectedRoute from "./router/ProtectedRoute.jsx";
-import ProductEditor from "./pages/admin/ProductEditor.jsx";
-import EditProduct from "./pages/admin/EditProduct.jsx"; // crear/editar
 
 export default function App() {
   return (
@@ -25,6 +30,7 @@ export default function App() {
       <NavBar />
       <div className="pt-14">
         <Routes>
+
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/catalog" element={<Catalog />} />
@@ -36,6 +42,8 @@ export default function App() {
           <Route path="/contact" element={<Contact />} />
           <Route path="/faq" element={<FAQ />} />
           <Route path="/search" element={<Search />} />
+
+          {/* Protected */}
           <Route
             path="/checkout"
             element={
@@ -44,7 +52,9 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+
           <Route path="/checkout-final" element={<CheckoutFinal />} />
+
           <Route
             path="/account"
             element={
@@ -54,20 +64,30 @@ export default function App() {
             }
           />
 
-          {/* Admin */}
+          {/* ADMIN */}
           <Route
-            path="/admin/products/:id/edit"
+            path="/admin/products"
             element={
               <ProtectedRoute role="ADMIN">
-                <ProductEditor />
+                <AdminProducts />
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/admin/products/new"
             element={
               <ProtectedRoute role="ADMIN">
-                <EditProduct />
+                <AdminProductEdit />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/products/:id"
+            element={
+              <ProtectedRoute role="ADMIN">
+                <AdminProductEdit />
               </ProtectedRoute>
             }
           />

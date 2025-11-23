@@ -1,6 +1,9 @@
 // src/redux/authSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
+import { jwtDecode } from "jwt-decode";
+
+
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:4002/api/v1";
 
@@ -24,8 +27,7 @@ export const loginUser = createAsyncThunk(
 
       saveToken(token);
 
-      // el slice usa action.payload.token
-      return { token, user: null };
+      return { token };
     } catch (error) {
       if (error?.response?.data?.message) {
         return rejectWithValue(error.response.data.message);
@@ -35,26 +37,20 @@ export const loginUser = createAsyncThunk(
   }
 );
 
-
-
 // --- REGISTER ---
 export const registerUser = createAsyncThunk(
   "auth/registerUser",
   async (payload, { rejectWithValue }) => {
     try {
       const { data } = await axios.post(`${API_BASE}/v1/auth/register`, payload);
-      // hoy solo usás registerStatus / registerError, así que alcanza con devolver data
       return data;
     } catch (error) {
-      if (error?.response?.data?.message) {
-        return rejectWithValue(error.response.data.message);
-      }
-      return rejectWithValue(error.message || "Error al registrarse");
+      return rejectWithValue(
+        error?.response?.data?.message || "Error al registrarse"
+      );
     }
   }
 );
-
-
 
 // --- GET ME ---
 export const fetchMe = createAsyncThunk(
@@ -68,7 +64,7 @@ export const fetchMe = createAsyncThunk(
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      return data; // UserResponseDTO
+      return data;
     } catch (error) {
       return rejectWithValue(
         error?.response?.data?.message || "Error al obtener usuario"
@@ -76,8 +72,6 @@ export const fetchMe = createAsyncThunk(
     }
   }
 );
-
-
 
 const initialState = {
   token: getToken() || null,
@@ -116,19 +110,10 @@ const authSlice = createSlice({
         state.token = action.payload.token;
         state.isAuth = true;
 
-        // Si tu token ya incluye info del usuario:
-        const payloadUser =
-          action.payload.user ||
-          action.payload.usuario ||
-          null;
+        const decoded = jwtDecode(action.payload.token);
 
-        state.user = payloadUser;
-
-        state.isAdmin = Boolean(
-          payloadUser?.role === "admin" ||
-            payloadUser?.isAdmin ||
-            payloadUser?.rol === "ADMIN"
-        );
+        state.user = { email: decoded.sub, role: decoded.role };
+        state.isAdmin = decoded.role === "ADMIN";
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.status = "error";
@@ -147,8 +132,7 @@ const authSlice = createSlice({
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.registerStatus = "error";
-        state.registerError =
-          action.payload || "Error al registrarse";
+        state.registerError = action.payload;
       });
 
     // FETCH ME
@@ -160,12 +144,7 @@ const authSlice = createSlice({
         state.status = "ready";
         state.user = action.payload;
         state.isAuth = true;
-
-        state.isAdmin = Boolean(
-          action.payload?.role === "admin" ||
-            action.payload?.isAdmin ||
-            action.payload?.rol === "ADMIN"
-        );
+        state.isAdmin = action.payload?.role === "ADMIN";
       })
       .addCase(fetchMe.rejected, (state) => {
         state.status = "idle";

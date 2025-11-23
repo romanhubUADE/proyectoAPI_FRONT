@@ -1,4 +1,6 @@
 // src/pages/AdminProductEdit.jsx
+
+
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -14,7 +16,11 @@ import {
 
 export default function AdminProductEdit() {
   const { id } = useParams();
-  const creating = id === "new";
+  const creating = id == "new";
+
+  console.log("ID desde useParams:", id);
+  console.log("creating:", creating);
+
   const nav = useNavigate();
   const dispatch = useDispatch();
 
@@ -35,6 +41,7 @@ export default function AdminProductEdit() {
     category: "",
   });
 
+  // cargar producto si no es "new"
   useEffect(() => {
     if (!creating && id) {
       dispatch(fetchProductById(id));
@@ -43,6 +50,7 @@ export default function AdminProductEdit() {
     }
   }, [creating, id, dispatch]);
 
+  // cuando llega current → rellenar form
   useEffect(() => {
     if (!creating && current) {
       setForm({
@@ -61,16 +69,26 @@ export default function AdminProductEdit() {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-
     if (!form.name || !form.price) return;
 
+    let result;
+
     if (creating) {
-      await dispatch(createProduct(form));
+      result = await dispatch(createProduct(form));
     } else {
-      await dispatch(updateProduct({ id, data: form }));
+      result = await dispatch(updateProduct({ id, data: form }));
+    }
+
+    // ❌ NO NAVEGAR AUTOMÁTICAMENTE
+    // Revisar si hubo error:
+    if (result.error) {
+      console.error("Error al guardar:", result.error);
+      return;
     }
 
     dispatch(resetSaveStatus());
+
+    // ✔ Redirigimos SOLO si se creó bien
     nav("/admin/products");
   };
 
@@ -86,6 +104,7 @@ export default function AdminProductEdit() {
         {creating ? "Nuevo producto" : "Editar producto"}
       </h1>
 
+      {/* Estado de carga del fetch */}
       {currentStatus === "loading" && !creating && (
         <p className="mb-4 text-stone-400">Cargando producto…</p>
       )}
@@ -95,12 +114,14 @@ export default function AdminProductEdit() {
         </p>
       )}
 
+      {/* ERROR AL GUARDAR */}
       {saveStatus === "failed" && (
         <p className="mb-4 text-red-400">
           Error al guardar: {saveError}
         </p>
       )}
 
+      {/* ERROR AL SUBIR IMÁGENES */}
       {uploadStatus === "failed" && (
         <p className="mb-4 text-red-400">
           Error al subir imágenes: {uploadError}
@@ -139,6 +160,7 @@ export default function AdminProductEdit() {
               className="w-full rounded-md border border-stone-700 bg-stone-900 px-3 py-2 text-sm outline-none"
             />
           </div>
+
           <div>
             <label className="mb-1 block text-sm">Categoría</label>
             <input
@@ -150,6 +172,7 @@ export default function AdminProductEdit() {
           </div>
         </div>
 
+        {/* Solo disponible en modo editar */}
         {!creating && (
           <div>
             <label className="mb-1 block text-sm">Imágenes</label>
