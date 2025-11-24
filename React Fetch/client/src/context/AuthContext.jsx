@@ -1,14 +1,9 @@
 // src/context/AuthContext.jsx
-// src/context/AuthContext.jsx
-// Ahora el AuthContext solo es un puente hacia Redux.
-
-import { createContext, useContext, useEffect } from "react";
+import { createContext, useContext } from "react";
 import { useDispatch, useSelector } from "react-redux";
-
 import {
   loginUser,
   registerUser,
-  fetchMe,
   logout as logoutAction,
 } from "../redux/authSlice.js";
 
@@ -28,13 +23,6 @@ export const AuthProvider = ({ children }) => {
     registerError,
   } = useSelector((s) => s.auth);
 
-  // auto-login si había token guardado
-  useEffect(() => {
-    if (token && !user) {
-      dispatch(fetchMe());
-    }
-  }, [token, user, dispatch]);
-
   const login = (email, password) =>
     dispatch(loginUser({ email, password }));
 
@@ -49,10 +37,8 @@ export const AuthProvider = ({ children }) => {
     isAdmin,
     status,
     error,
-
     registerStatus,
     registerError,
-
     login,
     register,
     logout,

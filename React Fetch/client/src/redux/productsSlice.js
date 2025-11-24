@@ -4,13 +4,7 @@ import axios from "axios";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:4002/api";
 
-const getToken = () => localStorage.getItem("token") || "";
-
-const authHeaders = () => {
-  const token = getToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
-
+// ========== HELPERS ==========
 const toArray = (data) => {
   if (Array.isArray(data)) return data;
   if (Array.isArray(data?.data)) return data.data;
@@ -19,9 +13,9 @@ const toArray = (data) => {
   return [];
 };
 
-// ======================= THUNKS =======================
+// ========== THUNKS ==========
 
-// GET /products
+// GET /products (público, no necesita token)
 export const fetchProducts = createAsyncThunk(
   "products/fetchAll",
   async (_, { rejectWithValue }) => {
@@ -36,7 +30,7 @@ export const fetchProducts = createAsyncThunk(
   }
 );
 
-// GET /products/:id
+// GET /products/:id (público)
 export const fetchProductById = createAsyncThunk(
   "products/fetchById",
   async (id, { rejectWithValue }) => {
@@ -51,15 +45,18 @@ export const fetchProductById = createAsyncThunk(
   }
 );
 
-// POST /products  (JSON, sin imágenes)
+// POST /products (requiere token ADMIN)
 export const createProduct = createAsyncThunk(
   "products/create",
-  async (product, { rejectWithValue }) => {
+  async (product, { getState, rejectWithValue }) => {
     try {
+      const token = getState().auth.token;
+      if (!token) return rejectWithValue("No autenticado");
+
       const { data } = await axios.post(`${API_BASE}/products`, product, {
         headers: {
           "Content-Type": "application/json",
-          ...authHeaders(),
+          Authorization: `Bearer ${token}`,
         },
       });
       return data;
@@ -71,18 +68,21 @@ export const createProduct = createAsyncThunk(
   }
 );
 
-// PATCH /products/:id
+// PATCH /products/:id (requiere token ADMIN)
 export const updateProduct = createAsyncThunk(
   "products/update",
-  async ({ id, data: body }, { rejectWithValue }) => {
+  async ({ id, data: body }, { getState, rejectWithValue }) => {
     try {
+      const token = getState().auth.token;
+      if (!token) return rejectWithValue("No autenticado");
+
       const { data } = await axios.patch(
         `${API_BASE}/products/${id}`,
         body,
         {
           headers: {
             "Content-Type": "application/json",
-            ...authHeaders(),
+            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -95,13 +95,16 @@ export const updateProduct = createAsyncThunk(
   }
 );
 
-// DELETE /products/:id
+// DELETE /products/:id (requiere token ADMIN)
 export const deleteProduct = createAsyncThunk(
   "products/delete",
-  async (id, { rejectWithValue }) => {
+  async (id, { getState, rejectWithValue }) => {
     try {
+      const token = getState().auth.token;
+      if (!token) return rejectWithValue("No autenticado");
+
       await axios.delete(`${API_BASE}/products/${id}`, {
-        headers: authHeaders(),
+        headers: { Authorization: `Bearer ${token}` },
       });
       return id;
     } catch (err) {
@@ -112,13 +115,14 @@ export const deleteProduct = createAsyncThunk(
   }
 );
 
-// POST /products/:id/images  (subir una o varias imágenes)
+// POST /products/:id/images (requiere token ADMIN)
 export const uploadProductImages = createAsyncThunk(
   "products/uploadImages",
-  async ({ id, files }, { rejectWithValue }) => {
+  async ({ id, files }, { getState, rejectWithValue }) => {
     try {
-      // El backend espera @RequestParam("file") MultipartFile file
-      // → mandamos una request por archivo.
+      const token = getState().auth.token;
+      if (!token) return rejectWithValue("No autenticado");
+
       for (const f of files || []) {
         if (!f) continue;
         const formData = new FormData();
@@ -127,13 +131,11 @@ export const uploadProductImages = createAsyncThunk(
         await axios.post(`${API_BASE}/products/${id}/images`, formData, {
           headers: {
             "Content-Type": "multipart/form-data",
-            ...authHeaders(),
+            Authorization: `Bearer ${token}`,
           },
         });
       }
 
-      // Podríamos devolver info extra si hiciera falta;
-      // de momento alcanza con el id del producto.
       return { id };
     } catch (err) {
       return rejectWithValue(
@@ -143,8 +145,7 @@ export const uploadProductImages = createAsyncThunk(
   }
 );
 
-// ======================= STATE =======================
-
+// ========== STATE ==========
 const initialState = {
   items: [],
   current: null,
@@ -165,8 +166,7 @@ const initialState = {
   uploadError: null,
 };
 
-// ======================= SLICE =======================
-
+// ========== SLICE ==========
 const productsSlice = createSlice({
   name: "products",
   initialState,
@@ -272,8 +272,6 @@ const productsSlice = createSlice({
       })
       .addCase(uploadProductImages.fulfilled, (state) => {
         state.uploadStatus = "succeeded";
-        // Si quisieras, acá podrías hacer un refetch del producto
-        // o actualizar manualmente current/images.
       })
       .addCase(uploadProductImages.rejected, (state, action) => {
         state.uploadStatus = "failed";

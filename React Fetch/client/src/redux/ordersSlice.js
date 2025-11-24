@@ -4,14 +4,7 @@ import axios from "axios";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:4002/api";
 
-// === Helpers de auth y errores ===
-const getToken = () => localStorage.getItem("token") || "";
-
-const authHeaders = () => {
-  const token = getToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
-
+// ========== HELPERS ==========
 const toArray = (data) => {
   if (Array.isArray(data)) return data;
   if (Array.isArray(data?.data)) return data.data;
@@ -27,15 +20,19 @@ const getErrorMessage = (error, fallback) => {
   return fallback;
 };
 
-// ======================= THUNKS =======================
+// ========== THUNKS ==========
 
 // GET /api/compras/mias
 export const fetchMyOrders = createAsyncThunk(
   "orders/fetchMine",
-  async (_, { rejectWithValue }) => {
+  async (_, { getState, rejectWithValue }) => {
     try {
+      // Leer token desde Redux store
+      const token = getState().auth.token;
+      if (!token) return rejectWithValue("No autenticado");
+
       const { data } = await axios.get(`${API_BASE}/compras/mias`, {
-        headers: authHeaders(), // ← IMPORTANTE: acá va el token
+        headers: { Authorization: `Bearer ${token}` },
       });
       return toArray(data);
     } catch (error) {
@@ -49,12 +46,16 @@ export const fetchMyOrders = createAsyncThunk(
 // POST /api/compras
 export const createOrder = createAsyncThunk(
   "orders/create",
-  async (payload, { rejectWithValue }) => {
+  async (payload, { getState, rejectWithValue }) => {
     try {
+      // Leer token desde Redux store
+      const token = getState().auth.token;
+      if (!token) return rejectWithValue("No autenticado");
+
       const { data } = await axios.post(`${API_BASE}/compras`, payload, {
         headers: {
           "Content-Type": "application/json",
-          ...authHeaders(), // ← IMPORTANTE: acá va el token
+          Authorization: `Bearer ${token}`,
         },
       });
       return data;
@@ -66,20 +67,18 @@ export const createOrder = createAsyncThunk(
   }
 );
 
-// ======================= STATE =======================
-
+// ========== STATE ==========
 const initialState = {
   mine: [],
-  mineStatus: "idle", // "idle" | "loading" | "ready" | "error"
+  mineStatus: "idle",
   mineError: null,
 
-  createStatus: "idle", // "idle" | "loading" | "ready" | "error"
+  createStatus: "idle",
   createError: null,
   lastCreated: null,
 };
 
-// ======================= SLICE =======================
-
+// ========== SLICE ==========
 const ordersSlice = createSlice({
   name: "orders",
   initialState,
@@ -136,5 +135,4 @@ const ordersSlice = createSlice({
 });
 
 export const { clearMyOrders, resetCreateStatus } = ordersSlice.actions;
-
 export default ordersSlice.reducer;

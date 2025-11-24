@@ -3,14 +3,17 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 
-const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:4002/api/v1";
+const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:4002/api";
 
-// Helpers para token
-const getToken = () => localStorage.getItem("token") || "";
-const saveToken = (t) => localStorage.setItem("token", t);
-const clearToken = () => localStorage.removeItem("token");
+// ========== HELPERS SESSIONSTORAGE ==========
+// Solo se usan para rehidratar al arrancar y guardar al login
+const getStoredToken = () => sessionStorage.getItem("token") || null;
+const saveStoredToken = (t) => sessionStorage.setItem("token", t);
+const clearStoredToken = () => sessionStorage.removeItem("token");
 
-// --- LOGIN ---
+// ========== THUNKS ==========
+
+// LOGIN: autentica y guarda token en Redux + sessionStorage
 export const loginUser = createAsyncThunk(
   "auth/loginUser",
   async ({ email, password }, { rejectWithValue }) => {
@@ -23,19 +26,19 @@ export const loginUser = createAsyncThunk(
       const token = data?.accessToken;
       if (!token) throw new Error("Token no recibido.");
 
-      saveToken(token);
+      // Guardar en sessionStorage para rehidratación
+      saveStoredToken(token);
 
       return { token };
     } catch (error) {
-      if (error?.response?.data?.message) {
-        return rejectWithValue(error.response.data.message);
-      }
-      return rejectWithValue(error.message || "Error al iniciar sesión");
+      return rejectWithValue(
+        error?.response?.data?.message || "Error al iniciar sesión"
+      );
     }
   }
 );
 
-// --- REGISTER ---
+// REGISTER: crea usuario
 export const registerUser = createAsyncThunk(
   "auth/registerUser",
   async (payload, { rejectWithValue }) => {
@@ -50,12 +53,14 @@ export const registerUser = createAsyncThunk(
   }
 );
 
-// --- GET ME ---
+// FETCH ME: obtiene datos del usuario autenticado
+// IMPORTANTE: usa getState() para obtener el token desde Redux
 export const fetchMe = createAsyncThunk(
   "auth/fetchMe",
-  async (_, { rejectWithValue }) => {
+  async (_, { getState, rejectWithValue }) => {
     try {
-      const token = getToken();
+      // Leer token desde Redux store (no desde sessionStorage)
+      const token = getState().auth.token;
       if (!token) return rejectWithValue("No hay token.");
 
       const { data } = await axios.get(`${API_BASE}/v1/auth/me`, {
@@ -71,10 +76,14 @@ export const fetchMe = createAsyncThunk(
   }
 );
 
+// ========== INITIAL STATE ==========
+// Rehidrata token desde sessionStorage al cargar la app
+const storedToken = getStoredToken();
+
 const initialState = {
-  token: getToken() || null,
+  token: storedToken,
   user: null,
-  isAuth: !!getToken(),
+  isAuth: !!storedToken,
   isAdmin: false,
 
   status: "idle",
@@ -84,6 +93,7 @@ const initialState = {
   registerError: null,
 };
 
+// ========== SLICE ==========
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -93,7 +103,7 @@ const authSlice = createSlice({
       state.user = null;
       state.isAuth = false;
       state.isAdmin = false;
-      clearToken();
+      clearStoredToken(); // Limpiar sessionStorage
     },
   },
   extraReducers: (builder) => {
@@ -109,7 +119,6 @@ const authSlice = createSlice({
         state.isAuth = true;
 
         const decoded = jwtDecode(action.payload.token);
-
         const role =
           decoded.role ||
           (Array.isArray(decoded.authorities) ? decoded.authorities[0] : null);
@@ -149,11 +158,9 @@ const authSlice = createSlice({
         state.status = "ready";
         state.isAuth = true;
 
-        // Datos básicos devueltos por /me
         const baseUser = action.payload || null;
-
-        // Recalculamos rol usando el token
         let role = null;
+
         if (state.token) {
           try {
             const decoded = jwtDecode(state.token);

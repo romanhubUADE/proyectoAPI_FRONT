@@ -4,13 +4,7 @@ import axios from "axios";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:4002/api";
 
-const getToken = () => localStorage.getItem("token") || "";
-
-const authHeaders = () => {
-  const token = getToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
-
+// ========== HELPERS ==========
 const toArray = (data) => {
   if (Array.isArray(data)) return data;
   if (Array.isArray(data?.data)) return data.data;
@@ -26,16 +20,14 @@ const getErrorMessage = (error, fallback) => {
   return fallback;
 };
 
-// Traer todas las categorías
+// ========== THUNKS ==========
+
+// GET /api/categories (público)
 export const fetchCategories = createAsyncThunk(
   "categories/fetchAll",
   async (_, { rejectWithValue }) => {
     try {
-      const { data } = await axios.get(`${API_BASE}/categories`, {
-        headers: {
-          ...authHeaders(),
-        },
-      });
+      const { data } = await axios.get(`${API_BASE}/categories`);
       return toArray(data);
     } catch (error) {
       return rejectWithValue(
@@ -45,19 +37,23 @@ export const fetchCategories = createAsyncThunk(
   }
 );
 
-// Crear una nueva categoría (solo admin)
+// POST /api/categories (requiere token ADMIN)
 export const createCategory = createAsyncThunk(
   "categories/create",
-  async (payload, { rejectWithValue }) => {
+  async (payload, { getState, rejectWithValue }) => {
     try {
-      const headers = {
-        "Content-Type": "application/json",
-        ...authHeaders(),
-      };
+      const token = getState().auth.token;
+      if (!token) return rejectWithValue("No autenticado");
+
       const { data } = await axios.post(
         `${API_BASE}/categories`,
         payload,
-        { headers }
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       return data;
     } catch (error) {
@@ -68,15 +64,17 @@ export const createCategory = createAsyncThunk(
   }
 );
 
+// ========== STATE ==========
 const initialState = {
   items: [],
-  status: "idle",        // "idle" | "loading" | "ready" | "error"
+  status: "idle",
   error: null,
 
-  createStatus: "idle",  // "idle" | "loading" | "ready" | "error"
+  createStatus: "idle",
   createError: null,
 };
 
+// ========== SLICE ==========
 const categoriesSlice = createSlice({
   name: "categories",
   initialState,
@@ -135,5 +133,4 @@ const categoriesSlice = createSlice({
 });
 
 export const { clearCategories, resetCreateStatus } = categoriesSlice.actions;
-
 export default categoriesSlice.reducer;
