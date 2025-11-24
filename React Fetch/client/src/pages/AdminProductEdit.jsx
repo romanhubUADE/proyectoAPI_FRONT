@@ -169,133 +169,192 @@ export default function AdminProductEdit() {
     nav("/admin/products");
   };
 
-  return (
-    <div className="mx-auto max-w-3xl px-4 py-10 text-stone-100">
-      <h1 className="mb-6 text-2xl font-semibold">
+ return (
+  <main className="mx-auto max-w-7xl px-6 py-10 text-stone-100">
+    {/* MIGAS */}
+    <div className="mb-6 text-sm text-stone-400">
+      <button onClick={() => nav(-1)} className="hover:text-amber-500">
+        Volver
+      </button>
+      <span className="mx-2">/</span>
+      <span className="text-stone-200">
         {creating ? "Nuevo producto" : "Editar producto"}
-      </h1>
+      </span>
+    </div>
 
-      {/* Estado de carga del producto en edición */}
-      {currentStatus === "loading" && !creating && (
-        <p className="mb-4 text-stone-400">Cargando producto…</p>
-      )}
-      {currentStatus === "error" && (
-        <p className="mb-4 text-red-400">
-          Error al cargar el producto: {currentError}
-        </p>
-      )}
+    <div className="grid gap-8 lg:grid-cols-2">
+      {/* ================================= */}
+      {/* COLUMNA IZQUIERDA (IMÁGENES) */}
+      {/* ================================= */}
+      <section>
+        <div className="relative aspect-[16/11] w-full overflow-hidden rounded-xl bg-stone-800">
+          {current?.images?.[0] || images[0] ? (
+            <img
+              src={
+                images[0]
+                  ? URL.createObjectURL(images[0])
+                  : current.images[0].url || current.images[0]
+              }
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center text-stone-500">
+              Sin imagen
+            </div>
+          )}
 
-      {/* Estado de categorías */}
-      {categoriesStatus === "loading" && (
-        <p className="mb-4 text-stone-400">Cargando categorías…</p>
-      )}
-      {categoriesStatus === "error" && (
-        <p className="mb-4 text-red-400">
-          Error al cargar categorías: {categoriesError}
-        </p>
-      )}
-
-      {/* Error al guardar */}
-      {saveStatus === "failed" && (
-        <p className="mb-4 text-red-400">Error al guardar: {saveError}</p>
-      )}
-
-      {/* Error al subir imágenes */}
-      {uploadStatus === "failed" && (
-        <p className="mb-4 text-red-400">
-          Error al subir imágenes: {uploadError}
-        </p>
-      )}
-
-      <form onSubmit={onSubmit} className="space-y-4">
-        <div>
-          <label className="mb-1 block text-sm">Nombre</label>
           <input
-            name="name"
-            value={form.name}
-            onChange={onChange}
-            className="w-full rounded-md border border-stone-700 bg-stone-900 px-3 py-2 text-sm outline-none"
+            type="file"
+            accept="image/*"
+            className="absolute inset-0 cursor-pointer opacity-0"
+            onChange={(e) => onImagesChange(e)}
           />
         </div>
 
-        <div>
-          <label className="mb-1 block text-sm">Descripción</label>
-          <textarea
-            name="description"
-            value={form.description}
-            onChange={onChange}
-            className="w-full rounded-md border border-stone-700 bg-stone-900 px-3 py-2 text-sm outline-none"
-          />
+        <div className="mt-4 grid grid-cols-2 gap-4">
+          {[1, 2].map((i) => {
+            const im = images[i] || current?.images?.[i];
+            return (
+              <div
+                key={i}
+                className="relative aspect-[4/3] overflow-hidden rounded-xl bg-stone-800"
+              >
+                {im ? (
+                  <img
+                    src={
+                      images[i]
+                        ? URL.createObjectURL(images[i])
+                        : im.url || im
+                    }
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-stone-500">
+                    —
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-3">
+        <label className="mt-6 flex h-28 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-amber-600/50 text-amber-400 hover:bg-amber-600/5">
+          Agregar imágenes
+          <input
+            multiple
+            accept="image/*"
+            type="file"
+            className="hidden"
+            onChange={(e) => onImagesChange(e)}
+          />
+        </label>
+      </section>
+
+      {/* ================================= */}
+      {/* COLUMNA DERECHA (FORMULARIO) */}
+      {/* ================================= */}
+      <section>
+        {/* TÍTULO */}
+        <label className="mb-1 block text-sm text-stone-300">
+          Título del producto
+        </label>
+        <input
+          className="w-full rounded-lg border border-stone-700 bg-stone-900 px-4 py-3 text-3xl font-bold text-stone-100 focus:border-amber-600 focus:outline-none"
+          value={form.name}
+          name="name"
+          onChange={onChange}
+        />
+
+        {/* DESCRIPCIÓN CORTA */}
+        <label className="mt-5 mb-1 block text-sm text-stone-300">
+          Descripción corta
+        </label>
+        <textarea
+          rows={3}
+          name="description"
+          value={form.description}
+          onChange={onChange}
+          className="w-full rounded-lg border border-stone-700 bg-stone-900 px-4 py-3 text-sm text-stone-300 focus:border-amber-600 focus:outline-none"
+          placeholder="Breve descripción…"
+        />
+
+        {/* PRECIO Y STOCK */}
+        <div className="mt-5 grid grid-cols-2 gap-4">
+          {/* PRECIO */}
           <div>
-            <label className="mb-1 block text-sm">Precio</label>
+            <label className="mb-1 block text-sm text-stone-300">Precio</label>
             <input
-              type="number"
-              step="0.01"
-              min="0"
               name="price"
               value={form.price}
               onChange={onChange}
-              className="w-full rounded-md border border-stone-700 bg-stone-900 px-3 py-2 text-sm outline-none"
+              className="w-full rounded-lg border border-stone-700 bg-stone-900 px-4 py-3 text-2xl font-bold text-amber-400 focus:border-amber-600 focus:outline-none"
+              placeholder="$0.00"
             />
           </div>
 
+          {/* STOCK */}
           <div>
-            <label className="mb-1 block text-sm">Stock</label>
+            <label className="mb-1 block text-sm text-stone-300">Stock</label>
             <input
               type="number"
-              min="0"
+              min={0}
               name="stock"
               value={form.stock}
               onChange={onChange}
-              className="w-full rounded-md border border-stone-700 bg-stone-900 px-3 py-2 text-sm outline-none"
+              className="w-full rounded-lg border border-stone-700 bg-stone-900 px-4 py-3 text-sm text-stone-300 focus:border-amber-600 focus:outline-none"
+              placeholder="Stock"
             />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm">Categoría</label>
-            <select
-              name="categoryId"
-              value={form.categoryId}
-              onChange={onChange}
-              className="w-full rounded-md border border-stone-700 bg-stone-900 px-3 py-2 text-sm outline-none"
-            >
-              <option value="">Seleccionar…</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.description}
-                </option>
-              ))}
-            </select>
           </div>
         </div>
 
-        {/* Carga de imágenes – disponible tanto en crear como en editar */}
-        <div>
-          <label className="mb-1 block text-sm">Imágenes</label>
-          <input
-            type="file"
-            multiple
-            onChange={onImagesChange}
-            className="w-full text-sm"
-          />
-          {creating && images.length > 0 && (
-            <p className="mt-1 text-xs text-stone-400">
-              {images.length} archivo(s) listo(s) para subir al guardar.
-            </p>
+        {/* CATEGORÍA */}
+        <label className="mt-5 mb-1 block text-sm text-stone-300">
+          Categoría
+        </label>
+        <select
+          name="categoryId"
+          value={form.categoryId}
+          onChange={onChange}
+          className="w-full rounded-lg border border-stone-700 bg-stone-900 px-4 py-3 text-sm text-stone-200 focus:border-amber-600 focus:outline-none"
+        >
+          <option value="">Seleccionar categoría…</option>
+          {categories?.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.description || c.name}
+            </option>
+          ))}
+        </select>
+
+        {/* BOTONES */}
+        <div className="mt-5 flex gap-4">
+          <button
+            onClick={onSubmit}
+            className="flex-1 rounded-lg bg-amber-600 px-6 py-3 text-sm font-semibold text-white hover:bg-amber-500 disabled:opacity-60"
+          >
+            Guardar
+          </button>
+
+          {!creating && (
+            <button
+              type="button"
+              onClick={() => {
+                if (confirm("¿Eliminar producto?")) {
+                  dispatch(updateProduct({ id, data: { activo: false } }));
+                  nav("/admin/products");
+                }
+              }}
+              className="flex-1 rounded-lg bg-red-700/25 px-6 py-3 text-sm font-semibold text-red-300 hover:bg-red-700/35"
+            >
+              Eliminar
+            </button>
           )}
         </div>
 
-        <button
-          type="submit"
-          disabled={saveStatus === "loading"}
-          className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/80 disabled:opacity-60"
-        >
-          Guardar
-        </button>
-      </form>
+      
+      </section>
     </div>
-  );
+  </main>
+);
+
+
 }

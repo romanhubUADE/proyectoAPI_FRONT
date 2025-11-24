@@ -143,19 +143,25 @@ export default function ProductDetail() {
             </p>
 
             <div className="mt-4 flex items-center gap-3">
-              <div className="text-3xl font-bold text-amber-400">
-                {fmt(final)}
-              </div>
-              {p.discount > 0 && (
-                <div className="text-sm text-stone-400 line-through">
-                  {fmt(p.price)}
-                </div>
-              )}
-            </div>
+  <div className="text-3xl font-bold text-amber-400">
+    {fmt(final)}
+  </div>
+  {p.discount > 0 && (
+    <div className="text-sm text-stone-400 line-through">
+      {fmt(p.price)}
+    </div>
+  )}
+</div>
 
-            <p className="mt-4 text-sm text-stone-300">
-              {p.description || "Sin descripción disponible."}
-            </p>
+{/* === NUEVO TÍTULO (como en el diseño anterior) === */}
+<h2 className="mt-6 mb-2 text-lg font-bold text-stone-100">
+  Descripción
+</h2>
+
+<p className="mt-2 text-sm text-stone-300">
+  {p.description || "Sin descripción disponible."}
+</p>
+
 
             <button
               onClick={handleAdd}

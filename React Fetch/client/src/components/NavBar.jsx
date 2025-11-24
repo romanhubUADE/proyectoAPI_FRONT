@@ -6,10 +6,13 @@ import { useAuth } from "../context/AuthContext.jsx";
 export default function NavBar() {
   const [query, setQuery] = useState("");
   const navigate = useNavigate();
-  const { state } = useShop();
+  const { cart } = useShop();
   const { isAuth, user, logout } = useAuth();
 
-  const count = (state?.cart ?? []).reduce((n, it) => n + (it.qty ?? it.quantity ?? 1), 0);
+const count = (cart ?? []).reduce(
+  (n, it) => n + (it.qty ?? it.quantity ?? 1),
+  0
+);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -67,16 +70,25 @@ export default function NavBar() {
             </>
           )}
 
-          <Link to="/cart" className="relative rounded p-2 text-stone-600 hover:bg-primary/10 dark:text-stone-300" aria-label="Carrito">
-            <svg fill="currentColor" width="20" height="20" viewBox="0 0 256 256">
-              <path d="M222.14,58.87A8,8,0,0,0,216,56H54.68L49.7,27.44A8,8,0,0,0,42,24H16a8,8,0,0,0,0,16H34.29l30.36,139.86A28,28,0,1,0,116,204h76a28,28,0,1,0,27.14-39.13L199.09,88h11.78A8,8,0,0,0,222.14,58.87Z" />
-            </svg>
-            {count > 0 && (
-              <span className="absolute -right-1 -top-1 min-w-[18px] rounded-full bg-primary px-1.5 text-center text-[10px] font-bold leading-4 text-white">
-                {count}
-              </span>
-            )}
-          </Link>
+          {/* CARRITO CON ANIMACIÓN */}
+<Link
+  to="/cart"
+  className="relative rounded p-2 text-stone-600 hover:bg-primary/10 dark:text-stone-300"
+  aria-label="Carrito"
+>
+  <svg fill="currentColor" width="20" height="20" viewBox="0 0 256 256">
+    <path d="M222.14,58.87A8,8,0,0,0,216,56H54.68L49.7,27.44A8,8,0,0,0,42,24H16a8,8,0,0,0,0,16H34.29l30.36,139.86A28,28,0,1,0,116,204h76a28,28,0,1,0,27.14-39.13L199.09,88h11.78A8,8,0,0,0,222.14,58.87Z" />
+  </svg>
+
+  {count > 0 && (
+    <span
+      key={count} 
+      className="absolute -right-1 -top-1 min-w-[18px] rounded-full bg-primary px-1.5 text-center text-[10px] font-bold leading-4 text-white animate-bounce"
+    >
+      {count}
+    </span>
+  )}
+</Link>
 
           {isAuth && (
             <>

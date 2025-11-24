@@ -10,16 +10,41 @@ const cartSlice = createSlice({
   initialState,
   reducers: {
     addItem(state, action) {
-      const product = action.payload;
-      if (!product || product.id == null) return state;
+  const p = action.payload;
+  if (!p || p.id == null) return;
 
-      const existing = state.items.find((p) => p.id === product.id);
-      if (existing) {
-        existing.qty = (existing.qty || 1) + 1;
-      } else {
-        state.items.push({ ...product, qty: 1 });
-      }
-    },
+  const existing = state.items.find((x) => x.id === p.id);
+
+  // Si ya está, solo aumentar cantidad
+  if (existing) {
+    existing.qty = (existing.qty || 1) + 1;
+    return;
+  }
+
+  // Normalizar imágenes
+  const normalizedImage =
+    typeof p.image === "string"
+      ? p.image
+      : p.images?.[0]?.url || p.images?.[0] || null;
+
+  const normalizedImages =
+    Array.isArray(p.images)
+      ? p.images.map((img) => (typeof img === "string" ? img : img.url))
+      : [];
+
+  // Guardar solo lo necesario en el carrito
+  state.items.push({
+    id: p.id,
+    name: p.name,
+    price: p.price,
+    discount: p.discount || 0,
+    qty: 1,
+
+    // Lo que necesita CartPage.jsx para mostrar imágenes
+    image: normalizedImage,
+    images: normalizedImages,
+  });
+},
     removeOne(state, action) {
       const id = action.payload;
       const existing = state.items.find((p) => p.id === id);

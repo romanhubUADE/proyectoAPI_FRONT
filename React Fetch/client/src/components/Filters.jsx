@@ -107,7 +107,18 @@ export default function Filters({ onChange }) {
   }, [createStatus, dispatch]);
 
   return (
-    <aside className="rounded-2xl bg-stone-950/60 p-5 text-sm text-stone-200 ring-1 ring-stone-800/70">
+    <aside className="
+  mt-8 
+  sticky 
+  top-28 
+  h-fit 
+  rounded-xl 
+  border border-stone-800 
+  bg-[#20160F] 
+  p-6 
+  text-sm 
+  text-stone-200
+">
       <h2 className="mb-4 text-base font-semibold text-stone-100">
         Filtros
       </h2>
