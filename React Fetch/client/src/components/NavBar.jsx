@@ -1,7 +1,14 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useShop } from "../context/ShopContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
+
+import { Menu } from "@headlessui/react";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchCategories } from "../redux/categoriesSlice.js";
+
+const norm = (s = "") =>
+  s.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
 
 export default function NavBar() {
   const [query, setQuery] = useState("");
@@ -9,10 +16,21 @@ export default function NavBar() {
   const { cart } = useShop();
   const { isAuth, user, logout } = useAuth();
 
-const count = (cart ?? []).reduce(
-  (n, it) => n + (it.qty ?? it.quantity ?? 1),
-  0
-);
+  const dispatch = useDispatch();
+  const { items: categories = [], status: catStatus } = useSelector(
+    (s) => s.categories || {}
+  );
+
+  useEffect(() => {
+    if (catStatus === "idle" || !catStatus) {
+      dispatch(fetchCategories());
+    }
+  }, [catStatus, dispatch]);
+
+  const count = (cart ?? []).reduce(
+    (n, it) => n + (it.qty ?? it.quantity ?? 1),
+    0
+  );
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -28,25 +46,86 @@ const count = (cart ?? []).reduce(
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-stone-200 bg-background-light/80 backdrop-blur-sm dark:border-stone-800 dark:bg-background-dark/80">
       <div className="mx-auto flex max-w-8xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-
         {/* Izquierda: Logo + Catálogo */}
         <div className="flex items-center gap-6">
           <Link to="/" className="flex items-center gap-3">
-            <svg className="h-6 w-6 text-primary" fill="currentColor" viewBox="0 0 24 24">
+            <svg
+              className="h-6 w-6 text-primary"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path d="M14.25 2.25a.75.75 0 0 0-.75.75v18a.75.75 0 0 0 .75.75h4.5a.75.75 0 0 0 .75-.75V3a.75.75 0 0 0-.75-.75h-4.5ZM15 3.75h3v16.5h-3V3.75Z" />
               <path d="M4.5 3.75a.75.75 0 0 0-.75.75v15a.75.75 0 0 0 .75.75h4.5a.75.75 0 0 0 .75-.75V4.5a.75.75 0 0 0-.75-.75h-4.5ZM5.25 5.25h3v13.5h-3V5.25Z" />
             </svg>
-            <h1 className="text-xl font-bold text-stone-900 dark:text-white">String &amp; Soul</h1>
+            <h1 className="text-xl font-bold text-stone-900 dark:text-white">
+              String &amp; Soul
+            </h1>
           </Link>
 
-          <Link to="/catalog" className="text-sm font-medium text-white hover:text-primary">
-            Catálogo
-          </Link>
+          {/* Dropdown Catálogo */}
+          <Menu as="div" className="relative">
+            <Menu.Button
+              className="inline-flex items-center gap-1 text-sm font-medium
+                         text-white hover:text-primary
+                         bg-transparent border-0 rounded-none
+                         focus:outline-none focus:ring-0"
+            >
+              Catálogo
+              <span className="text-xs text-stone-400">▾</span>
+            </Menu.Button>
+
+            <Menu.Items className="absolute left-0 mt-2 w-56 rounded-md border border-stone-700 bg-background-dark py-2 shadow-lg focus:outline-none z-50">
+              {/* Todos los productos */}
+              <Menu.Item>
+                {({ active }) => (
+                  <Link
+                    to="/catalog"
+                    className={`block px-4 py-2 text-sm ${
+                      active
+                        ? "bg-stone-800 text-amber-300"
+                        : "text-stone-100"
+                    }`}
+                  >
+                    Todos los productos
+                  </Link>
+                )}
+              </Menu.Item>
+
+              <div className="my-1 h-px bg-stone-800" />
+
+              {/* Categorías desde API */}
+              {Array.isArray(categories) &&
+                categories.map((c) => {
+                  const name =
+                    c.name || c.nombre || c.description || "Sin nombre";
+                  const slug = norm(name);
+                  return (
+                    <Menu.Item key={c.id ?? slug}>
+                      {({ active }) => (
+                        <Link
+                          to={`/catalog?cat=${encodeURIComponent(slug)}`}
+                          className={`block px-4 py-2 text-sm ${
+                            active
+                              ? "bg-stone-800 text-amber-300"
+                              : "text-stone-100"
+                          }`}
+                        >
+                          {name}
+                        </Link>
+                      )}
+                    </Menu.Item>
+                  );
+                })}
+            </Menu.Items>
+          </Menu>
         </div>
 
         {/* Derecha: búsqueda, auth, carrito */}
         <div className="flex items-center gap-3">
-          <form onSubmit={handleSearch} className="relative w-44 sm:w-52 lg:w-64">
+          <form
+            onSubmit={handleSearch}
+            className="relative w-44 sm:w-52 lg:w-64"
+          >
             <input
               type="text"
               value={query}
@@ -54,41 +133,57 @@ const count = (cart ?? []).reduce(
               placeholder="Buscar guitarras..."
               className="w-full rounded-md border border-stone-300 bg-transparent py-1.5 pl-9 pr-3 text-sm text-stone-800 placeholder-stone-500 focus:border-primary focus:ring-1 focus:ring-primary dark:border-stone-700 dark:text-white dark:placeholder-stone-400"
             />
-            <svg className="absolute left-2 top-1.5 h-5 w-5 text-stone-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1110.65 3a7.5 7.5 0 016 13.65z" />
+            <svg
+              className="absolute left-2 top-1.5 h-5 w-5 text-stone-500"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1110.65 3a7.5 7.5 0 016 13.65z"
+              />
             </svg>
           </form>
 
           {!isAuth && (
             <>
-              <Link to="/login" className="rounded-md px-3 py-2 text-sm font-medium text-stone-700 hover:bg-primary/10 dark:text-stone-200">
+              <Link
+                to="/login"
+                className="rounded-md px-3 py-2 text-sm font-medium text-stone-700 hover:bg-primary/10 dark:text-stone-200"
+              >
                 Iniciar sesión
               </Link>
-              <Link to="/register" className="rounded-md bg-primary px-3 py-2 text-sm font-semibold text-white hover:opacity-95">
+              <Link
+                to="/register"
+                className="rounded-md bg-primary px-3 py-2 text-sm font-semibold text-white hover:opacity-95"
+              >
                 Registrarse
               </Link>
             </>
           )}
 
-          {/* CARRITO CON ANIMACIÓN */}
-<Link
-  to="/cart"
-  className="relative rounded p-2 text-stone-600 hover:bg-primary/10 dark:text-stone-300"
-  aria-label="Carrito"
->
-  <svg fill="currentColor" width="20" height="20" viewBox="0 0 256 256">
-    <path d="M222.14,58.87A8,8,0,0,0,216,56H54.68L49.7,27.44A8,8,0,0,0,42,24H16a8,8,0,0,0,0,16H34.29l30.36,139.86A28,28,0,1,0,116,204h76a28,28,0,1,0,27.14-39.13L199.09,88h11.78A8,8,0,0,0,222.14,58.87Z" />
-  </svg>
+          {/* Carrito */}
+          <Link
+            to="/cart"
+            className="relative rounded p-2 text-stone-600 hover:bg-primary/10 dark:text-stone-300"
+            aria-label="Carrito"
+          >
+            <svg fill="currentColor" width="20" height="20" viewBox="0 0 256 256">
+              <path d="M222.14,58.87A8,8,0,0,0,216,56H54.68L49.7,27.44A8,8,0,0,0,42,24H16a8,8,0,0,0,0,16H34.29l30.36,139.86A28,28,0,1,0,116,204h76a28,28,0,1,0,27.14-39.13L199.09,88h11.78A8,8,0,0,0,222.14,58.87Z" />
+            </svg>
 
-  {count > 0 && (
-    <span
-      key={count} 
-      className="absolute -right-1 -top-1 min-w-[18px] rounded-full bg-primary px-1.5 text-center text-[10px] font-bold leading-4 text-white animate-bounce"
-    >
-      {count}
-    </span>
-  )}
-</Link>
+            {count > 0 && (
+              <span
+                key={count}
+                className="absolute -right-1 -top-1 min-w-[18px] rounded-full bg-primary px-1.5 text-center text-[10px] font-bold leading-4 text-white animate-bounce"
+              >
+                {count}
+              </span>
+            )}
+          </Link>
 
           {isAuth && (
             <>

@@ -41,7 +41,7 @@ function Item({ i, q, a, active, onToggle }) {
 export default function FAQ() {
   const faqs = [
     { q: "¿Cómo hago un pedido?", a: "Agregá productos al carrito y continuá al checkout." },
-    { q: "¿Qué métodos de pago aceptan?", a: "Tarjetas de crédito, débito y PayPal." },
+    { q: "¿Qué métodos de pago aceptan?", a: "Tarjetas de crédito, débito y Efectivo en el momento de la entrega!." },
     { q: "¿Puedo cancelar mi pedido?", a: "Sí, dentro de las 24 h si aún no fue enviado." },
     { q: "¿Cuánto tarda el envío?", a: "Envío estándar 3–7 días hábiles según tu zona." },
     { q: "¿Tienen garantía?", a: "Garantía limitada por defectos de fábrica." },
