@@ -74,25 +74,17 @@ export default function CheckoutFinal() {
 
   const handlePayment = async () => {
     if (!cart.length) return;
-
+  
     const payload = {
-      customer: {
-        name: customer.name,
-        last: customer.last,
-        email: customer.email,
-        store: customer.store,
-      },
       items: cart.map((c) => ({
         productId: c.id,
-        name: c.name,
-        qty: c.qty,
-        price: c.price,
+        quantity: c.qty,
       })),
-      total,
     };
-
-    await dispatch(createOrder(payload));
+  
+    await dispatch(createOrder(payload)); // o createCompra si tenés ese thunk
   };
+  
 
   // Manejar resultado de la compra
   useEffect(() => {
