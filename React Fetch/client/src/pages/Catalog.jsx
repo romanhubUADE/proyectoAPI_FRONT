@@ -28,12 +28,18 @@ export default function Catalog() {
     (state) => state.products
   );
 
-  // Cargar productos sólo una vez
+  //Agregar dependencia de items para forzar recarga visual
   useEffect(() => {
     if (status === "idle") {
       dispatch(fetchProducts());
     }
   }, [status, dispatch]);
+
+  //Forzar recarga al volver a la pa¡gina
+  useEffect(() => {
+    // Recargar productos cada vez que se monta el componente
+    dispatch(fetchProducts());
+  }, []); // Array vaci­o = solo al montar
 
   const sp = useMemo(() => new URLSearchParams(search), [search]);
 
@@ -42,7 +48,7 @@ export default function Catalog() {
 
   const title =
     catSlug === "acoustic"
-      ? "Guitarras Acústicas"
+      ? "Guitarras Acsticas"
       : catSlug === "electric"
       ? "Guitarras Eléctricas"
       : catSlug === "bass"
@@ -71,7 +77,7 @@ export default function Catalog() {
     }
   }, []);
 
- // base por categoría (de la URL)
+ // base por categori­a (de la URL)
 const base = useMemo(() => {
   const list = Array.isArray(allProducts) ? allProducts : [];
   if (!wanted) return list;
@@ -80,7 +86,7 @@ const base = useMemo(() => {
   );
 }, [allProducts, wanted]);
 
-// aplicar filtros (categoría + precio)
+// aplicar filtros (categoria + precio)
 const products = useMemo(
   () =>
     base.filter((p) => {
@@ -111,7 +117,7 @@ const products = useMemo(
 
           {isLoading && (
             <p className="mb-4 text-sm text-stone-400">
-              Cargando productos…
+              Cargando productos
             </p>
           )}
 
@@ -133,7 +139,7 @@ const products = useMemo(
               >
                 <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
                   <span className="text-4xl leading-none text-amber-500 group-hover:text-amber-400">
-                    ＋
+                    +
                   </span>
                   <span className="mt-2 text-sm font-medium text-amber-400 group-hover:text-amber-300">
                     Añadir Guitarra

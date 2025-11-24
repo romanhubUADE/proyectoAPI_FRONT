@@ -1,6 +1,7 @@
+// src/pages/CheckoutFinal.jsx
+
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
 import Swal from "sweetalert2";
 
 import { useShop } from "../context/ShopContext.jsx";
@@ -10,6 +11,7 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   createOrder,
   resetCreateStatus,
+  fetchMyOrders, // AGREGAR ESTE IMPORT
 } from "../redux/ordersSlice.js";
 
 const fmt = (n) =>
@@ -31,7 +33,6 @@ export default function CheckoutFinal() {
     lastCreated,
   } = useSelector((s) => s.orders);
 
-  // Datos del checkout (obtenidos del paso anterior)
   const [customer, setCustomer] = useState({
     email: "",
     store: "",
@@ -50,16 +51,12 @@ export default function CheckoutFinal() {
       last4: sessionStorage.getItem("payment.last4") || "",
     });
   }, []);
-  
-  
 
-  // Calcular el total del carrito
   const total = useMemo(
     () => cart.reduce((acc, it) => acc + (it.price || 0) * (it.qty || 1), 0),
     [cart]
   );
 
-  // Si el admin intenta comprar → bloquear
   useEffect(() => {
     if (isAdmin) {
       Swal.fire({
@@ -79,47 +76,31 @@ export default function CheckoutFinal() {
 
   const handlePayment = async () => {
     if (!cart.length) return;
-  
-    // Guardar metadata adicional para mostrar en la factura de /account
+
+    // Guardar metadata
     const meta = JSON.parse(sessionStorage.getItem("ordersMeta") || "{}");
 
-          meta[lastCreated?.id] = {
-            store: customer.store,
-            buyer: `${customer.name} ${customer.last}`,
-            payment: customer.payment
-          };
-
-        sessionStorage.setItem("ordersMeta", JSON.stringify(meta));
-
-
-  
     const payload = {
       items: cart.map((c) => ({
         productId: c.id,
         quantity: c.qty,
       })),
     };
-  
+
     await dispatch(createOrder(payload));
   };
-  
-  
 
-  // Manejar resultado de la compra
+  // CLAVE: Manejar resultado de la compra
   useEffect(() => {
     if (createStatus === "ready" && lastCreated) {
+      // Guardar metadata
       const meta = JSON.parse(sessionStorage.getItem("ordersMeta") || "{}");
-
-          meta[lastCreated.id] = {
-            store: customer.store,
-            buyer: `${customer.name} ${customer.last}`,
-            payment: customer.payment,
-          };
-
-          sessionStorage.setItem("ordersMeta", JSON.stringify(meta));
-
-
-
+      meta[lastCreated.id] = {
+        store: customer.store,
+        buyer: `${customer.name} ${customer.last}`,
+        payment: customer.payment,
+      };
+      sessionStorage.setItem("ordersMeta", JSON.stringify(meta));
 
       Swal.fire({
         title: "Compra realizada",
@@ -129,9 +110,13 @@ export default function CheckoutFinal() {
         confirmButtonColor: "#b86614",
         background: "#2c1f13ff",
         color: "#f8f7f6",
-      }).then(() => {
+      }).then(async () => {
         clearCart();
         dispatch(resetCreateStatus());
+        
+        // CLAVE: Recargar ordenes antes de navegar
+        await dispatch(fetchMyOrders());
+        
         nav("/account");
       });
     }
@@ -150,6 +135,7 @@ export default function CheckoutFinal() {
     createStatus,
     createError,
     lastCreated,
+    customer,
     clearCart,
     nav,
     dispatch,
@@ -189,7 +175,7 @@ export default function CheckoutFinal() {
               className="flex justify-between border-b border-stone-700 pb-2 last:border-none"
             >
               <span>
-                {item.name} × {item.qty}
+                {item.name} — {item.qty}
               </span>
               <span>{fmt(item.price * item.qty)}</span>
             </li>
@@ -206,7 +192,7 @@ export default function CheckoutFinal() {
           disabled={paying}
           className="mt-6 w-full rounded-lg bg-primary px-4 py-3 text-center text-sm font-semibold text-stone-900 hover:bg-primary/80 disabled:opacity-60"
         >
-          {paying ? "Procesando…" : "Confirmar compra"}
+          {paying ? "Procesando" : "Confirmar compra"}
         </button>
       </section>
     </div>

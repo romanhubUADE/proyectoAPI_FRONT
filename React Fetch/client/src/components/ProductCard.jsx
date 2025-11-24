@@ -1,3 +1,4 @@
+// src/components/ProductCard.jsx
 import { Link } from "react-router-dom";
 
 const BASE = import.meta.env.VITE_API_URL ?? "http://localhost:4002";
@@ -7,7 +8,7 @@ export default function ProductCard({ p }) {
   const fmt = n =>
     new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
 
-  // Normalizar imágenes igual que en ProductDetail
+  // Normalizar imagenes igual que en ProductDetail
   const images = Array.isArray(p?.images)
     ? p.images.map((it) =>
         typeof it === "string"

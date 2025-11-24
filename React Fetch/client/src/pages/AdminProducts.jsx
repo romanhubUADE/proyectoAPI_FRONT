@@ -1,4 +1,5 @@
 // src/pages/AdminProducts.jsx
+
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -25,14 +26,21 @@ export default function AdminProducts() {
     }
   }, [status, dispatch]);
 
+  // NUEVO: Recargar cuando cambie deleteStatus
+  useEffect(() => {
+    if (deleteStatus === "succeeded") {
+      dispatch(fetchProducts());
+    }
+  }, [deleteStatus, dispatch]);
+
   const handleDelete = async (id, name) => {
     const ok = window.confirm(
-      `¿Seguro que querés eliminar el producto "${name}"?`
+      `¿Seguro que querÃ©s eliminar el producto "${name}"?`
     );
     if (!ok) return;
 
     await dispatch(deleteProduct(id));
-    await dispatch(fetchProducts());
+    // Ya no es necesario fetchProducts aquÃ­ porque el useEffect lo maneja
   };
 
   return (
@@ -51,7 +59,7 @@ export default function AdminProducts() {
       </div>
 
       {status === "loading" && (
-        <p className="text-stone-400">Cargando productos…</p>
+        <p className="text-stone-400">Cargando productos</p>
       )}
 
       {status === "error" && (
