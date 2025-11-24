@@ -6,6 +6,17 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchMyOrders } from "../redux/ordersSlice.js";
 
+const storeLabel = sessionStorage.getItem("lastCheckout.store") || "Sucursal no especificada";
+const buyerLabel = sessionStorage.getItem("lastCheckout.buyer") || "Cliente";
+const paymentLabel = sessionStorage.getItem("lastCheckout.payment") || "Método no especificado";
+
+const paymentMap = {
+  credit: "Tarjeta de crédito",
+  debit: "Tarjeta de débito",
+  cash: "Efectivo",
+};
+
+
 const fmt = (n) =>
   new Intl.NumberFormat("es-AR", {
     style: "currency",
@@ -53,10 +64,14 @@ export default function Account() {
   const loading = mineStatus === "loading";
   const err = mineStatus === "error" ? mineError : "";
 
+  const meta = JSON.parse(sessionStorage.getItem("ordersMeta") || "{}");
+
   const onLogout = () => {
     logout();
     nav("/");
   };
+
+  
 
   return (
     <div className="flex min-h-[70vh] items-start justify-center px-4 py-12 sm:py-20">
@@ -118,7 +133,8 @@ export default function Account() {
                   <ul className="space-y-4">
                     {mine.map((order, idx) => {
                       const id = order.id || order._id || idx;
-                      const created =
+                      const info = meta[id] || {}; 
+                       const created =
                         order.createdAt || order.date || order.fecha;
                       const total =
                         order.total ||
@@ -183,6 +199,13 @@ export default function Account() {
                                   </li>
                                 ))}
                               </ul>
+                              {/* Nueva información de factura */}
+                              <div className="mt-3 border-t border-stone-800 pt-3 space-y-1 text-xs text-stone-300">
+                              <p><span className="text-stone-400">Sucursal:</span> {info.store || "Sucursal no especificada"}</p>
+                              <p><span className="text-stone-400">Comprado por:</span> {info.buyer || "Cliente"}</p>
+                              <p><span className="text-stone-400">Método de pago:</span> {paymentMap[info.payment] || "No especificado"}</p>
+                              </div>
+ 
                             </div>
                           )}
                         </li>

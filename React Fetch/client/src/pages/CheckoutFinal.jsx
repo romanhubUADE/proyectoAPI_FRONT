@@ -37,6 +37,7 @@ export default function CheckoutFinal() {
     store: "",
     name: "",
     last: "",
+    payment: "",
   });
 
   useEffect(() => {
@@ -45,8 +46,12 @@ export default function CheckoutFinal() {
       store: sessionStorage.getItem("checkout.store") || "",
       name: sessionStorage.getItem("checkout.name") || "",
       last: sessionStorage.getItem("checkout.last") || "",
+      payment: sessionStorage.getItem("payment.method") || "",
+      last4: sessionStorage.getItem("payment.last4") || "",
     });
   }, []);
+  
+  
 
   // Calcular el total del carrito
   const total = useMemo(
@@ -75,6 +80,19 @@ export default function CheckoutFinal() {
   const handlePayment = async () => {
     if (!cart.length) return;
   
+    // Guardar metadata adicional para mostrar en la factura de /account
+    const meta = JSON.parse(sessionStorage.getItem("ordersMeta") || "{}");
+
+          meta[lastCreated?.id] = {
+            store: customer.store,
+            buyer: `${customer.name} ${customer.last}`,
+            payment: customer.payment
+          };
+
+        sessionStorage.setItem("ordersMeta", JSON.stringify(meta));
+
+
+  
     const payload = {
       items: cart.map((c) => ({
         productId: c.id,
@@ -82,13 +100,27 @@ export default function CheckoutFinal() {
       })),
     };
   
-    await dispatch(createOrder(payload)); // o createCompra si tenés ese thunk
+    await dispatch(createOrder(payload));
   };
+  
   
 
   // Manejar resultado de la compra
   useEffect(() => {
     if (createStatus === "ready" && lastCreated) {
+      const meta = JSON.parse(sessionStorage.getItem("ordersMeta") || "{}");
+
+          meta[lastCreated.id] = {
+            store: customer.store,
+            buyer: `${customer.name} ${customer.last}`,
+            payment: customer.payment,
+          };
+
+          sessionStorage.setItem("ordersMeta", JSON.stringify(meta));
+
+
+
+
       Swal.fire({
         title: "Compra realizada",
         text: `Tu número de pedido es #${lastCreated.id || ""}`,

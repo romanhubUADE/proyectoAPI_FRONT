@@ -40,6 +40,8 @@ export default function Checkout() {
     sessionStorage.setItem("checkout.store", form.store);
     sessionStorage.setItem("checkout.name", form.name);
     sessionStorage.setItem("checkout.last", form.last);
+    
+
 
     nav("/payment");
   };

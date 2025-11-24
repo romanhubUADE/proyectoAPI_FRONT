@@ -41,8 +41,9 @@ export default function Payment() {
     const last4 =
       m === "cash" ? "" : (card.number || "").replace(/\D/g, "").slice(-4);
 
-    localStorage.setItem("payment.method", m);
-    localStorage.setItem("payment.last4", last4);
+      sessionStorage.setItem("payment.method", m);
+      sessionStorage.setItem("payment.last4", last4);
+      
 
     nav("/checkout-final");
   };
