@@ -6,7 +6,10 @@ import { useDispatch, useSelector } from "react-redux";
 import Filters from "../components/Filters.jsx";
 import ProductCard from "../components/ProductCard.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
-import { fetchProducts } from "../redux/productsSlice.js";
+import {
+  fetchProducts,
+  fetchProductsAdmin,
+} from "../redux/productsSlice.js";
 
 const norm = (s = "") =>
   s.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
@@ -20,7 +23,6 @@ const CAT = {
 
 export default function Catalog() {
   const { isAdmin } = useAuth();
-  console.log("isAdmin?", isAdmin);
   const { search } = useLocation();
 
   const dispatch = useDispatch();
@@ -28,18 +30,25 @@ export default function Catalog() {
     (state) => state.products
   );
 
-  //Agregar dependencia de items para forzar recarga visual
+  // cargar productos según rol cuando el estado está idle
   useEffect(() => {
     if (status === "idle") {
+      if (isAdmin) {
+        dispatch(fetchProductsAdmin());
+      } else {
+        dispatch(fetchProducts());
+      }
+    }
+  }, [status, isAdmin, dispatch]);
+
+  // si cambia el rol (toggle admin/usuario), forzar recarga
+  useEffect(() => {
+    if (isAdmin) {
+      dispatch(fetchProductsAdmin());
+    } else {
       dispatch(fetchProducts());
     }
-  }, [status, dispatch]);
-
-  //Forzar recarga al volver a la pa¡gina
-  useEffect(() => {
-    // Recargar productos cada vez que se monta el componente
-    dispatch(fetchProducts());
-  }, []); // Array vaci­o = solo al montar
+  }, [isAdmin, dispatch]);
 
   const sp = useMemo(() => new URLSearchParams(search), [search]);
 
@@ -48,7 +57,7 @@ export default function Catalog() {
 
   const title =
     catSlug === "acoustic"
-      ? "Guitarras Acsticas"
+      ? "Guitarras Acústicas"
       : catSlug === "electric"
       ? "Guitarras Eléctricas"
       : catSlug === "bass"
@@ -77,83 +86,108 @@ export default function Catalog() {
     }
   }, []);
 
- // base por categori­a (de la URL)
-const base = useMemo(() => {
-  const list = Array.isArray(allProducts) ? allProducts : [];
-  if (!wanted) return list;
-  return list.filter((p) =>
-    norm(p.categoryDescription || p.category || "").includes(wanted)
+  // base: filtro por categoría de la URL + visibilidad por rol (activo / inactivo)
+  const base = useMemo(() => {
+    const list = Array.isArray(allProducts) ? allProducts : [];
+
+    const withCategory = !wanted
+      ? list
+      : list.filter((p) =>
+          norm(p.categoryDescription || p.category || "").includes(wanted)
+        );
+
+    // solo el admin ve los inactivos (activo = 0 / false)
+    if (isAdmin) return withCategory;
+
+    return withCategory.filter(
+      (p) =>
+        p.activo === undefined ||
+        p.activo === null ||
+        p.activo === true ||
+        p.activo === 1
+    );
+  }, [allProducts, wanted, isAdmin]);
+
+  // aplicar filtros (categoría + precio)
+  const products = useMemo(
+    () =>
+      base.filter((p) => {
+        const catName = norm(p.categoryDescription || p.category || "");
+        const byCat = catSet.size === 0 ? true : catSet.has(catName);
+
+        const val = Number(p.price) || 0;
+        const byPrice =
+          (price.min == null ? true : val >= price.min) &&
+          (price.max == null ? true : val <= price.max);
+
+        return byCat && byPrice;
+      }),
+    [base, catSet, price]
   );
-}, [allProducts, wanted]);
-
-// aplicar filtros (categoria + precio)
-const products = useMemo(
-  () =>
-    base.filter((p) => {
-      const catName = norm(p.categoryDescription || p.category || "");
-      const byCat = catSet.size === 0 ? true : catSet.has(catName);
-
-      const val = Number(p.price) || 0;
-      const byPrice =
-        (price.min == null ? true : val >= price.min) &&
-        (price.max == null ? true : val <= price.max);
-
-      return byCat && byPrice;
-    }),
-  [base, catSet, price]
-);
-
 
   const isLoading = status === "loading";
   const isError = status === "error";
 
   return (
-    <main className="mx-auto max-w-7xl px-6 py-10">
-      <div className="grid grid-cols-[280px,1fr] gap-8">
-        <Filters onChange={onFilters} />
+  <main className="mx-auto max-w-7xl px-6 py-10">
+    {/* 2 columnas: filtros + productos */}
+    <div className="grid gap-8 lg:grid-cols-[260px,1fr]">
+      {/* ACÁ ANTES TENÍAS EL <aside ...> */}
+      <Filters onChange={onFilters} />
 
-        <section>
-          <h1 className="mb-8 text-4xl font-bold text-stone-100">{title}</h1>
+      <section>
+        <div className="flex items-center justify-between gap-4">
+          <h1 className="text-xl font-bold text-stone-100">{title}</h1>
 
-          {isLoading && (
-            <p className="mb-4 text-sm text-stone-400">
-              Cargando productos
-            </p>
+          {isAdmin && (
+            <span className="rounded-full bg-amber-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-300">
+              Vista administrador
+            </span>
           )}
+        </div>
 
-          {isError && (
-            <p className="mb-4 text-sm text-red-400">
-              Error al cargar productos: {error || "Intentalo nuevamente."}
-            </p>
+        {isLoading && (
+          <p className="mb-4 text-sm text-stone-400">
+            Cargando productos...
+          </p>
+        )}
+
+        {isError && (
+          <p className="mb-4 text-sm text-red-400">
+            Error al cargar productos: {error || "Intentalo nuevamente."}
+          </p>
+        )}
+
+        <div className="mt-4 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          {products.map((p) => (
+            <ProductCard key={p.id} p={p} isAdminView={isAdmin} />
+          ))}
+
+          {isAdmin && (
+            <Link
+              to="/admin/products/new"
+              className="group relative block w-full aspect-[3/4] rounded-xl border border-dashed border-stone-700 bg-stone-900/10 transition-colors hover:border-amber-500 hover:bg-stone-900/30"
+            >
+              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-4xl leading-none text-amber-500 group-hover:text-amber-400">
+                  +
+                </span>
+                <span className="mt-2 text-sm font-medium text-amber-400 group-hover:text-amber-300">
+                  Añadir Guitarra
+                </span>
+              </div>
+            </Link>
           )}
+        </div>
 
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {products.map((p) => (
-              <ProductCard key={p.id} p={p} />
-            ))}
-
-            {isAdmin && (
-              <Link
-                to="/admin/products/new"
-                className="group relative block w-full rounded-xl border-2 border-dashed border-amber-500/70 bg-stone-900/10 hover:bg-stone-900/30 transition-colors aspect-[3/4]"
-              >
-                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-4xl leading-none text-amber-500 group-hover:text-amber-400">
-                    +
-                  </span>
-                  <span className="mt-2 text-sm font-medium text-amber-400 group-hover:text-amber-300">
-                    Añadir Guitarra
-                  </span>
-                </div>
-              </Link>
-            )}
+        {products.length === 0 && !isLoading && !isError && (
+          <div className="mt-6 text-stone-400">
+            Sin productos disponibles.
           </div>
+        )}
+      </section>
+    </div>
+  </main>
+);
 
-          {products.length === 0 && !isLoading && !isError && (
-            <div className="mt-6 text-stone-400">Sin productos disponibles.</div>
-          )}
-        </section>
-      </div>
-    </main>
-  );
 }

@@ -30,6 +30,27 @@ export const fetchProducts = createAsyncThunk(
   }
 );
 
+// GET /products/admin (incluye inactivos, requiere token ADMIN)
+export const fetchProductsAdmin = createAsyncThunk(
+  "products/fetchAllAdmin",
+  async (_, { getState, rejectWithValue }) => {
+    try {
+      const token = getState().auth.token;
+      if (!token) return rejectWithValue("No autenticado");
+
+      const { data } = await axios.get(`${API_BASE}/products/admin`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return toArray(data);
+    } catch (err) {
+      return rejectWithValue(
+        err?.response?.data?.message || "Error al cargar productos"
+      );
+    }
+  }
+);
+
+
 // GET /products/:id (público)
 export const fetchProductById = createAsyncThunk(
   "products/fetchById",
@@ -115,6 +136,29 @@ export const deleteProduct = createAsyncThunk(
   }
 );
 
+// PATCH /products/:id/activar (requiere token ADMIN)
+export const activateProduct = createAsyncThunk(
+  "products/activate",
+  async (id, { getState, rejectWithValue }) => {
+    try {
+      const token = getState().auth.token;
+      if (!token) return rejectWithValue("No autenticado");
+
+      await axios.patch(`${API_BASE}/products/${id}/activar`, null, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      // devolvemos solo el id para actualizar el estado local
+      return id;
+    } catch (err) {
+      return rejectWithValue(
+        err?.response?.data?.message || "Error al activar producto"
+      );
+    }
+  }
+);
+
+
 // POST /products/:id/images (requiere token ADMIN)
 export const uploadProductImages = createAsyncThunk(
   "products/uploadImages",
@@ -199,7 +243,23 @@ const productsSlice = createSlice({
       .addCase(fetchProducts.rejected, (state, action) => {
         state.status = "error";
         state.error = action.payload;
+      })
+      // mismas transiciones pero para el admin
+      .addCase(fetchProductsAdmin.pending, (state) => {
+        state.status = "loading";
+        state.error = null;
+      })
+      .addCase(fetchProductsAdmin.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.items = action.payload;
+      })
+      .addCase(fetchProductsAdmin.rejected, (state, action) => {
+        state.status = "error";
+        state.error = action.payload;
       });
+
+    
+      
 
     // fetchProductById
     builder
@@ -262,6 +322,15 @@ const productsSlice = createSlice({
       .addCase(deleteProduct.rejected, (state, action) => {
         state.deleteStatus = "failed";
         state.deleteError = action.payload;
+      })
+      .addCase(activateProduct.fulfilled, (state, action) => {
+        const id = action.payload;
+        const p = state.items.find((it) => it.id === id);
+        if (p) p.activo = true;
+      })
+      .addCase(activateProduct.rejected, (state, action) => {
+        // opcional: podrías setear algún error si quieres
+        state.saveError = action.payload;
       });
 
     // uploadProductImages

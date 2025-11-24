@@ -12,6 +12,7 @@ import {
   clearCurrent,
   resetSaveStatus,
   fetchProducts, // AGREGAR ESTE IMPORT
+  activateProduct,
 } from "../redux/productsSlice.js";
 import { fetchCategories } from "../redux/categoriesSlice.js";
 
@@ -31,6 +32,8 @@ export default function AdminProductEdit() {
     uploadStatus,
     uploadError,
   } = useSelector((s) => s.products);
+  const isInactive = !creating && current?.activo === false;
+
 
   const {
     items: categories,
@@ -161,6 +164,25 @@ export default function AdminProductEdit() {
     dispatch(resetSaveStatus());
     nav("/admin/products");
   };
+
+    const handleDelete = async () => {
+    if (!id) return;
+    if (confirm("¿Eliminar producto?")) {
+      await dispatch(updateProduct({ id, data: { activo: false } }));
+      await dispatch(fetchProducts());
+      nav("/admin/products");
+    }
+  };
+
+  const handleReactivate = async () => {
+    if (!id) return;
+    if (confirm("¿Reactivar producto?")) {
+      await dispatch(activateProduct(id));
+      await dispatch(fetchProducts());
+      nav("/admin/products");
+    }
+  };
+
 
   return (
     <main className="mx-auto max-w-7xl px-6 py-10 text-stone-100">
@@ -315,22 +337,26 @@ export default function AdminProductEdit() {
               Guardar
             </button>
 
-            {!creating && (
-              <button
-                type="button"
-                onClick={async () => {
-                  if (confirm("¿Eliminar producto?")) {
-                    await dispatch(updateProduct({ id, data: { activo: false } }));
-                    //Recargar lista antes de navegar
-                    await dispatch(fetchProducts());
-                    nav("/admin/products");
-                  }
-                }}
-                className="flex-1 rounded-lg bg-red-700/25 px-6 py-3 text-sm font-semibold text-red-300 hover:bg-red-700/35"
-              >
-                Eliminar
-              </button>
+                        {!creating && (
+              isInactive ? (
+                <button
+                  type="button"
+                  onClick={handleReactivate}
+                  className="flex-1 rounded-lg bg-emerald-700/25 px-6 py-3 text-sm font-semibold text-emerald-300 hover:bg-emerald-700/35"
+                >
+                  Reactivar
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  className="flex-1 rounded-lg bg-red-700/25 px-6 py-3 text-sm font-semibold text-red-300 hover:bg-red-700/35"
+                >
+                  Eliminar
+                </button>
+              )
             )}
+
           </div>
         </section>
       </div>
