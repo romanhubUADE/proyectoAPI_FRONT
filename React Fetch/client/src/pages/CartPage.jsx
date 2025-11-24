@@ -124,24 +124,11 @@ export default function CartPage() {
                                 −
                               </button>
 
-                              {/* Input cantidad */}
-                              <input
-                                value={qty}
-                                onChange={(e) =>
-                                  handleChangeQty(item.id, e.target.value)
-                                }
-                                className="w-12 rounded-md border border-primary/20 bg-transparent p-1 text-center"
-                                type="number"
-                                min={1}
-                              />
+                              {/* Cantidad solo lectura */}
+                              <span className="w-12 rounded-md border border-primary/20 bg-transparent p-1 text-center inline-flex items-center justify-center">
+                                {qty}
+                              </span>
 
-                              {/* Botón + */}
-                              <button
-                                onClick={() => setCartQty(item.id, qty + 1)}
-                                className="flex items-center justify-center h-8 w-8 rounded-full ring-1 ring-primary/30 hover:bg-primary/20"
-                              >
-                                +
-                              </button>
 
                               {/* Quitar */}
                               <button
