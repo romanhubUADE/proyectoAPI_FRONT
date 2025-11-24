@@ -9,6 +9,8 @@ import {
   setQty,
 } from "../redux/cartSlice.js";
 
+import { toast } from "react-toastify";
+
 // Utilidad para aplicar descuento cuando un producto lo tenga
 const priceWithDiscount = (p) => {
   const price = Number(p?.price) || 0;
@@ -26,7 +28,16 @@ export const ShopProvider = ({ children }) => {
   const cart = useSelector((state) => state.cart.items);
 
   // Acciones del carrito → despachan a Redux
-  const addToCart = (product) => dispatch(addItem(product));
+  const addToCart = (product) => {
+    dispatch(addItem(product));
+
+    // TOAST: feedback visual no bloqueante al agregar producto
+    toast.success(
+      `"${product?.name ?? "Producto"}" agregado al carrito`,
+      { icon: "🛒" }
+    );
+  };
+
   const removeOneFromCart = (id) => dispatch(removeOne(id));
   const removeAllFromCart = (id) => dispatch(removeAll(id));
   const clearCartAll = () => dispatch(clearCart());

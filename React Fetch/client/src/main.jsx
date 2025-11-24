@@ -7,6 +7,10 @@ import { Provider } from 'react-redux';
 import './styles/reset.css';
 import './styles/index.css';
 
+// NUEVO: react-toastify
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 import App from './App.jsx';
 import { ShopProvider } from './context/ShopContext.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
@@ -28,6 +32,17 @@ createRoot(document.getElementById('root')).render(
           <ShopProvider>
             <RoleProvider>
               <App />
+              <ToastContainer
+                position="bottom-right"
+                autoClose={2500}
+                hideProgressBar={false}
+                newestOnTop
+                closeOnClick
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="dark"
+              />
             </RoleProvider>
           </ShopProvider>
         </AuthProvider>
