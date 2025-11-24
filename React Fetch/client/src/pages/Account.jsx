@@ -174,13 +174,11 @@ export default function Account() {
                                 {items.map((it, i2) => (
                                   <li key={i2} className="flex justify-between">
                                     <span>
-                                      {it.product?.name ||
-                                        it.name ||
-                                        it.descripcion ||
-                                        "Producto"}
+                                    {it.productName || it.product?.name || it.name || "Producto"}
+
                                     </span>
                                     <span className="text-stone-400">
-                                      x{it.quantity || it.qty || 1}
+                                    x{it.quantity || it.qty || 1}
                                     </span>
                                   </li>
                                 ))}
